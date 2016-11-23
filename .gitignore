@@ -1,0 +1,11 @@
+*.swp
+*.o
+*.class
+ycc
+note.md
+*.ll
+*.s
+*tmp*
+_book
+SUMMARY.md
+
