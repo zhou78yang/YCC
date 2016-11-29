@@ -1,5 +1,5 @@
-VPATH = lexer:common:parser:compiler:test
-OBJS = token.o scanner.o
+VPATH = lexer:common:parser:compiler:vm:test
+OBJS = token.o scanner.o error.o symbols.o symbol_table.o parser.o depth_vistor.o
 
 ycc: main.cc $(OBJS)
 	clang++ -std=c++11 -o ycc main.cc $(OBJS)

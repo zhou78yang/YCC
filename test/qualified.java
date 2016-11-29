@@ -1,6 +1,6 @@
 public class qualified
 {
-    public static void main(string args)
+    public static void main(String [] args)
     {
         a.b.c.print("hello world");
         a.b[c] = "test";

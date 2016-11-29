@@ -198,12 +198,16 @@ namespace ycc
 
     void Scanner::handleEOFState()
     {
+        updateLocation();
+
         makeToken("EOF", TokenTag::END_OF_FILE);
         input_.close();
     }
 
     void Scanner::handleIdentifierState()
     {
+        updateLocation();
+
         addToBuffer(currentChar_);
         while(std::isalnum(peekChar()) || (peekChar() == '_'))
         {
@@ -223,6 +227,8 @@ namespace ycc
     void Scanner::handleNumberState()
     {
         int numberBase = 10;
+
+        updateLocation();
 
         // get integer part
         addToBuffer(currentChar_);          // add the first digit
@@ -367,33 +373,43 @@ namespace ycc
         bool is_char = false;
         bool matched = false;
 
+        updateLocation();
+
         if(currentChar_ == '\'')
         {
             is_char = true;
         }
 
-        while(!input_.eof())
+        if((is_char && peekChar() == '\'') || (!is_char && peekChar() == '"'))
         {
-            getNextChar();
-            addToBuffer(currentChar_);
-
-            // if characater is an escape sequence
-            if(currentChar_ == '\\')
-            {
-                handleEscapeSeqState();
-            }
-
-            if((peekChar() == '\'') || (peekChar() == '"'))
-            {
-                matched = true;
-                break;
-            }
+            // empty string
+            matched = true;
+            addToBuffer((char)0);
         }
-
-        if(!matched)
+        else
         {
-            errorReport("miss \" or ' until end of file");
-            return ;
+            while(!input_.eof())
+            {
+                getNextChar();
+                addToBuffer(currentChar_);
+
+                // if characater is an escape sequence
+                if(currentChar_ == '\\')
+                {
+                    handleEscapeSeqState();
+                }
+
+                if((peekChar() == '\'') || (peekChar() == '"'))
+                {
+                    matched = true;
+                    break;
+                }
+            }
+            if(!matched)
+            {
+                errorReport("miss \" or ' until end of file");
+                return ;
+            }
         }
 
         if(is_char)
@@ -502,6 +518,8 @@ namespace ycc
 
     void Scanner::handleOperationState()
     {
+        updateLocation();
+
         // check float
         if((currentChar_ == '.') && (std::isdigit(peekChar())))
         {
@@ -536,7 +554,7 @@ namespace ycc
     // others
     void Scanner::errorReport(const std::string &msg)
     {
-        // TODO
+        ExceptionHandler::getInstance()->add(msg, loc_);
         setErrorFlag(true);
     }
 

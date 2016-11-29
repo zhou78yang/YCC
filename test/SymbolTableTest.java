@@ -7,6 +7,8 @@ public class SymbolTableTest
         return ;
     }
 
+    int a, b, c, d, e;
+
     class subclass
     {
         private int index;

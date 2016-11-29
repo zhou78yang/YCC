@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include "token.h"
+#include "../common/error.h"
 
 namespace ycc
 {
@@ -34,6 +35,8 @@ namespace ycc
         char            peekChar();
         void            addToBuffer(char c);
         void            reduceBuffer();
+        void            makeToken(std::string name, TokenTag tag);
+        void            updateLocation();
 
         void            preprocess();
         void            handleLineComment();
@@ -52,13 +55,13 @@ namespace ycc
 
         void            errorReport(const std::string &msg);
 
-        void            makeToken(std::string name, TokenTag tag);
     private:
         // locaation
         std::string     filename_;
         std::ifstream   input_;
         long            line_;
         long            column_;
+        TokenLocation   loc_;
         // character and token
         char            currentChar_;
         State           state_;
@@ -90,8 +93,14 @@ namespace ycc
 
     inline TokenLocation Scanner::getTokenLocation() const
     {
-        return TokenLocation(filename_, line_, column_);
+        return loc_;
     }
+
+    inline void Scanner::updateLocation()
+    {
+        loc_ = TokenLocation(filename_, line_, column_);
+    }
+
 }
 
 #endif
