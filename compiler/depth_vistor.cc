@@ -171,12 +171,6 @@ namespace ycc
     {
         cout << "new ";
         node->constructor->accept(this);
-        for(auto s : node->spaceExpr)
-        {
-            cout << "[";
-            s->accept(this);
-            cout << "]";
-        }
     }
 
     void DepthVistor::visit(IndexExpr *node)
@@ -216,13 +210,13 @@ namespace ycc
         }
         else
         {
-            cout << node->value << " ";
+            cout << node->lexeme << " ";
         }
     }
 
     void DepthVistor::visit(RealExpr *node)
     {
-        cout << node->value << " ";
+        cout << node->lexeme << " ";
     }
 
     void DepthVistor::visit(BoolExpr *node)

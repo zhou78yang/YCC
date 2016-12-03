@@ -316,7 +316,6 @@ namespace ycc
             v->visit(this);
         }
         ExprPtr         constructor;        // call expr
-        VecExprPtr      spaceExpr;          // int
     };
 
     struct IndexExpr : public Expr

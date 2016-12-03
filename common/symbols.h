@@ -11,6 +11,7 @@ namespace ycc
     extern bool isPrefixOp(TokenTag tag);
     extern bool isPostfixOp(TokenTag tag);
     extern int  isModifier(TokenTag tag);
+    extern bool isBasicType(TokenTag tag);
     extern std::string tokenDesc(TokenTag tag);
 }
 

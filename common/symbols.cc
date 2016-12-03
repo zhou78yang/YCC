@@ -215,6 +215,25 @@ namespace ycc
         return m;
     }
 
+    bool isBasicType(TokenTag tag)
+    {
+        switch(tag)
+        {
+        case TokenTag::BYTE:
+        case TokenTag::SHORT:
+        case TokenTag::CHAR:
+        case TokenTag::INT:
+        case TokenTag::LONG:
+        case TokenTag::FLOAT:
+        case TokenTag::DOUBLE:
+        case TokenTag::BOOLEAN:
+            return true;
+        default:
+            break;
+        }
+        return false;
+    }
+
     std::string tokenDesc(TokenTag tag)
     {
         std::string ret = "";

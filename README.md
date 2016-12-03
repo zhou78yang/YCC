@@ -69,12 +69,12 @@ const,      float,      native,     super,      while,
 ### <a name="字面值">字面值
 
 ```
-IntegerLiteral
-FloatingPointLiteral
-CharacterLiteral
-StringLiteral
-BooleanLiteral
-NullLiteral
+IntegerLiteral                      // such as 1, 013, 81241243L, 0xA1a1
+FloatingPointLiteral                // such as 3.14, .26, 135., 314e-2
+CharacterLiteral                    // such as 'a', '/012', '/u2F11'
+StringLiteral                       // such as "this is a string"
+BooleanLiteral                      // true, false
+NullLiteral                         // null
 
 ```
 

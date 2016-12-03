@@ -243,7 +243,9 @@ namespace ycc
         // eat [=Expr]
         if(match(TokenTag::ASSIGN, true))
         {
+            dump("parse init value begin");
             var->initValue = parseExpr();
+            dump("parse init value end");
         }
 
         node->decls.push_back(var);
@@ -649,6 +651,7 @@ namespace ycc
             break;
         case TokenTag::NEW:
             left = parseNew();
+            break;
         case TokenTag::INT_LITERAL:
             left = parseInt();
             break;
@@ -830,20 +833,7 @@ namespace ycc
         auto node = new NewExpr(getLocation());
         advance();  // eat "new"
 
-        // TODO : built-in type
-        auto type = parseIdentifier();
-        node->constructor = parseCall(type);
-
-        if(match(TokenTag::LEFT_SQUARE, true))
-        {
-            do {
-                node->spaceExpr.push_back(parseExpr());
-                if(!match(TokenTag::RIGHT_SQUARE, token_.lexeme(), true))
-                {
-                    break;
-                }
-            } while(match(TokenTag::LEFT_SQUARE, true));
-        }
+        node->constructor = parseIdentifier();
 
         return node;
     }
