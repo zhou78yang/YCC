@@ -1,43 +1,64 @@
-#include <iostream>
 #include "./lexer/token.h"
 #include "./lexer/scanner.h"
 #include "./parser/parser.h"
 #include "./compiler/depth_vistor.h"
+#include "./main.hpp"
 
 using namespace ycc;
 
+using std::cin;
 using std::cout;
+using std::cerr;
 using std::endl;
 using std::string;
 
 int main(int argc, char *argv[])
 {
+    init(argc, argv);
 
-    string filename(argv[1]);
-
-    Scanner scanner(filename);
-
-    /*
-    // scanner & error report test
-    cout << "******************************************" << endl;
-    cout << "* print token stream here" << endl;
-    cout << "******************************************" << endl;
-    while(scanner.getToken().tag() != TokenTag::END_OF_FILE)
+    if(checkOption(OpTag::VER_INFO))
     {
-        scanner.getNextToken();
-        //cout << scanner.getToken().toString() << endl;
-        // exception handler test
-        ExceptionHandler::getInstance()->add(scanner.getToken().toString(), scanner.getTokenLocation(), ErrorType::NOTE);
+        cout << APPNAME << " " << VERSION << endl;
+        return 0;
     }
-    */
+    if(checkOption(OpTag::HELP))
+    {
+        manualReport();
+        return 0;
+    }
 
+    if(srcFileName.size() < 1)
+    {
+        cout << ">>";
+        cin >> srcFileName;
+    }
+
+
+    if(checkOption(OpTag::DUMP_TOKENS))
+    {
+        // scanner & error report test
+        Scanner dumpTokens(srcFileName);
+        cout << "******************************************" << endl;
+        cout << "* print token stream here" << endl;
+        cout << "******************************************" << endl;
+        while(dumpTokens.getToken().tag() != TokenTag::END_OF_FILE)
+        {
+            auto token = dumpTokens.getNextToken();
+            auto loc = dumpTokens.getTokenLocation();
+            cout << std::left << std::setw(50) << "[T] " + loc.toString();
+            cout << token.toString() << "\n";
+        }
+        cout << endl;
+    }
+
+    Scanner scanner(srcFileName);
     Parser parser(scanner);
     auto ast = parser.parse();
-    DepthVistor *vistor = new DepthVistor();
 
-    for(auto node : ast)
+    if(checkOption(OpTag::DUMP_AST))
     {
-        node->accept(vistor);
+        DepthVistor *vistor = new DepthVistor();
+        vistor->visit(ast);
     }
 
     SymbolTable::getInstance()->dump();

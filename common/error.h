@@ -32,6 +32,7 @@ namespace ycc
       public:
         static ExceptionHandler *   getInstance();
         void                        report();
+        bool                        hasError() const;
         void                        add(Exception e);
         void                        add(const std::string &msg,
                                         const TokenLocation &loc,
@@ -45,6 +46,10 @@ namespace ycc
         std::vector<Exception>      exceptionList_;
     };
 
+    inline bool ExceptionHandler::hasError() const
+    {
+        return !exceptionList_.empty();
+    }
 }
 
 #endif

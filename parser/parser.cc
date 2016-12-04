@@ -243,9 +243,9 @@ namespace ycc
         // eat [=Expr]
         if(match(TokenTag::ASSIGN, true))
         {
-            dump("parse init value begin");
+            //dump("parse init value begin");
             var->initValue = parseExpr();
-            dump("parse init value end");
+            //dump("parse init value end");
         }
 
         node->decls.push_back(var);

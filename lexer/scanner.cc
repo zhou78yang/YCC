@@ -10,7 +10,7 @@ namespace ycc
         : filename_(srcFileName), line_(1), column_(0),
             currentChar_(0), state_(State::NONE)
     {
-        input_.open(filename_);
+        input_.open(filename_, std::ios::in);
 
         if(input_.fail())
         {
@@ -22,6 +22,10 @@ namespace ycc
     // some character handlering functions
     void Scanner::getNextChar()
     {
+        if(input_.eof())
+        {
+            input_.close();
+        }
         currentChar_ = input_.get();
 
         if(currentChar_ == '\n')
@@ -380,11 +384,12 @@ namespace ycc
             is_char = true;
         }
 
-        if((is_char && peekChar() == '\'') || (!is_char && peekChar() == '"'))
+        // TODO : empty character reduce
+        if(!is_char && peekChar() == '"')
         {
             // empty string
             matched = true;
-            addToBuffer((char)0);
+            //addToBuffer((char)0);
         }
         else
         {

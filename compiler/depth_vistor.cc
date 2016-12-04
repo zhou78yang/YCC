@@ -7,6 +7,45 @@ using std::endl;
 
 namespace ycc
 {
+    DepthVistor::DepthVistor()
+        : level(0)
+    {}
+
+    void DepthVistor::upgrade()
+    {
+        level++;
+    }
+
+    void DepthVistor::degrade()
+    {
+        level--;
+    }
+
+    void DepthVistor::println(const std::string &msg, bool end)
+    {
+        for(int i = 0; i < level-1; i++) cout << "│   ";
+        if(end)
+        {
+            cout << "└── ";
+        }
+        else
+        {
+            cout << "├── ";
+        }
+        cout << msg << endl;
+    }
+
+
+    void DepthVistor::visit(VecNodePtr ast)
+    {
+        cout << "<<AST>>" << endl;
+        for(auto node : ast)
+        {
+            node->accept(this);
+        }
+        cout << endl;
+    }
+
     void DepthVistor::visit(ASTNode *node)
     {
         cout << "you should not visit here in ASTNode" << endl;
@@ -19,132 +58,173 @@ namespace ycc
 
     void DepthVistor::visit(EmptyStmt *node)
     {
-        cout << ";" << endl;
+        upgrade();
+        println("<<EmptyStmt>>("+ node->getLocation().toString()+")");
+        degrade();
     }
 
     void DepthVistor::visit(ClassStmt *node)
     {
-        cout << "class " << node->name << " : " << endl;
+        upgrade();
+        println("<<ClassStmt>>("+ node->getLocation().toString()+")");
+        println("name:");
+        println("└── " + node->name);
+        println("body:");
         node->body->accept(this);
+        degrade();
     }
 
     void DepthVistor::visit(MethodDeclStmt *node)
     {
-        cout << "function " << node->name
-             << " : " << endl;
+        upgrade();
+        println("<<MethodDeclStmt>>("+ node->getLocation().toString()+")");
+        println("name:");
+        println("└── " + node->name);
+        // TODO: parameter
+        println("body:");
         node->body->accept(this);
+        degrade();
     }
 
     void DepthVistor::visit(PrimaryStmt *node)
     {
-        cout << node->type << " ";
+        upgrade();
+        println("<<PrimaryStmt>>("+ node->getLocation().toString()+")");
+        println("type:");
+        println("└── " + node->type);
+        println("decls:");
         for(auto v : node->decls)
         {
             v->accept(this);
-            cout << ", ";
         }
-        cout << endl;
+        degrade();
     }
 
     void DepthVistor::visit(BlockStmt *node)
     {
-        cout << "{" << endl;
+        upgrade();
+        println("<<BlockStmt>>("+ node->getLocation().toString()+")");
+        println("statements:");
         for(auto stmt : node->statements)
         {
             stmt->accept(this);
-            cout << endl;
         }
-        cout << "}" << endl;
+        degrade();
     }
 
     void DepthVistor::visit(IfStmt *node)
     {
-        cout << "if ";
+        upgrade();
+        println("<<IfStmt>>("+ node->getLocation().toString()+")");
+        println("condition:");
         node->condition->accept(this);
-        cout << " : " << endl;
+        println("thenBody:");
         node->thenBody->accept(this);
         if(node->elseBody)
         {
-            cout << "else : " << endl;
+            println("elseBody:");
             node->elseBody->accept(this);
         }
+        degrade();
     }
 
     void DepthVistor::visit(ForStmt *node)
     {
-        cout << "for ( ";
+        upgrade();
+        println("<<ForStmt>>("+ node->getLocation().toString()+")");
+        println("init:");
         node->init->accept(this);
-        cout << " ; ";
+        println("condition:");
         node->condition->accept(this);
-        cout << " ; ";
+        println("update:");
         node->update->accept(this);
-        cout << ")" << endl;
+        println("body:");
         node->body->accept(this);
+        degrade();
     }
 
     void DepthVistor::visit(WhileStmt *node)
     {
-        cout << "while ";
+        upgrade();
+        println("<<WhileStmt>>("+ node->getLocation().toString()+")");
+        println("condition:");
         node->condition->accept(this);
-        cout << " : " << endl;
+        println("body:");
         node->body->accept(this);
+        degrade();
     }
 
     void DepthVistor::visit(DoStmt *node)
     {
-        cout << "do " << endl;
+        upgrade();
+        println("<<DoStmt>>("+ node->getLocation().toString()+")");
+        println("body:");
         node->body->accept(this);
-        cout << "while ";
+        println("condition:");
         node->condition->accept(this);
-        cout << endl;
+        degrade();
     }
 
     void DepthVistor::visit(SwitchStmt *node)
     {
-        cout << "switch ";
+        upgrade();
+        println("<<SwitchStmt>>("+ node->getLocation().toString()+")");
+        println("flag:");
         node->flag->accept(this);
-        cout << "{" << endl;
+        println("cases:");
         for(auto c : node->cases)
         {
             c->accept(this);
         }
         if(!node->defaultBody.empty())
         {
-            cout << "default:" << endl;
+            println("default:");
             for(auto v : node->defaultBody)
             {
                 v->accept(this);
             }
         }
-        cout << "}" << endl;
+        degrade();
     }
 
     void DepthVistor::visit(CaseStmt *node)
     {
-        cout << "case ";
+        upgrade();
+        println("<<CaseStmt>>("+ node->getLocation().toString()+")");
+        println("label:");
         node->label->accept(this);
-        cout << " : " << endl;
+        println("statements:");
         for(auto v : node->statements)
         {
             v->accept(this);
         }
+        degrade();
     }
 
     void DepthVistor::visit(ReturnStmt *node)
     {
-        cout << "return : ";
-        if(node->returnValue) node->returnValue->accept(this);
-        cout << endl;
+        upgrade();
+        println("<<ReturnStmt>>("+ node->getLocation().toString()+")");
+        if(node->returnValue)
+        {
+            println("returnValue:");
+            node->returnValue->accept(this);
+        }
+        degrade();
     }
 
     void DepthVistor::visit(BreakStmt *node)
     {
-        cout << "break;" << endl;
+        upgrade();
+        println("<<BreakStmt>>("+ node->getLocation().toString()+")");
+        degrade();
     }
 
     void DepthVistor::visit(ContinueStmt *node)
     {
-        cout << "continue;" << endl;
+        upgrade();
+        println("<<ContinueStmt>>("+ node->getLocation().toString()+")");
+        degrade();
     }
 
     void DepthVistor::visit(Expr *node)
@@ -154,126 +234,164 @@ namespace ycc
 
     void DepthVistor::visit(VariableDeclExpr *node)
     {
-        cout << node->name;
+        upgrade();
+        println("<<VariableDeclExpr>>("+ node->getLocation().toString()+")");
+        println("name:");
+        println("└── " + node->name);
         if(node->initValue)
         {
-            cout << " = ";
+            println("initValue:");
             node->initValue->accept(this);
         }
+        degrade();
     }
 
     void DepthVistor::visit(IdentifierExpr *node)
     {
-        cout << node->name << " ";
+        upgrade();
+        println("<<IdentifierExpr>>("+ node->getLocation().toString()+")");
+        println("name:");
+        println("└── " + node->name);
+        degrade();
     }
 
     void DepthVistor::visit(NewExpr *node)
     {
-        cout << "new ";
+        upgrade();
+        println("<<NewExpr>>("+ node->getLocation().toString()+")");
+        println("constructor:");
         node->constructor->accept(this);
+        degrade();
     }
 
     void DepthVistor::visit(IndexExpr *node)
     {
+        upgrade();
+        println("<<IndexExpr>>("+ node->getLocation().toString()+")");
+        println("left:");
         node->left->accept(this);
-        cout << "[";
+        println("index:");
         node->index->accept(this);
-        cout << "]";
+        degrade();
     }
 
     void DepthVistor::visit(CallExpr *node)
     {
+        upgrade();
+        println("<<CallExpr>>("+ node->getLocation().toString()+")");
+        println("name:");
         node->name->accept(this);
-        cout << "( ";
+        println("arguments:");
         for(auto v : node->arguments)
         {
             v->accept(this);
-            cout << ", ";
         }
-
-        cout << ") ";
+        degrade();
     }
 
     void DepthVistor::visit(QualifiedIdExpr *node)
     {
+        upgrade();
+        println("<<QualifiedIdExpr>>("+ node->getLocation().toString()+")");
+        println("left:");
         node->left->accept(this);
-        cout << ".";
+        println("right:");
         node->right->accept(this);
+        degrade();
     }
 
     void DepthVistor::visit(IntExpr *node)
     {
-        if(node->isChar)
-        {
-            char c = (char)node->value;
-            cout << c << " ";
-        }
-        else
-        {
-            cout << node->lexeme << " ";
-        }
+        upgrade();
+        println("<<IntExpr>>("+ node->getLocation().toString()+")");
+        println("isChar:");
+        println(node->isChar?"└── true":"└── false");
+        println("value:");
+        println("└── " + node->lexeme);
+        degrade();
     }
 
     void DepthVistor::visit(RealExpr *node)
     {
-        cout << node->lexeme << " ";
+        upgrade();
+        println("<<RealExpr>>("+ node->getLocation().toString()+")");
+        println("value:");
+        println("└── " + node->lexeme);
+        degrade();
     }
 
     void DepthVistor::visit(BoolExpr *node)
     {
-        if(node->value) cout << "true ";
-        else cout << "false ";
+        upgrade();
+        println("<<BoolExpr>>("+ node->getLocation().toString()+")");
+        println("value:");
+        println(node->value?"└── true":"└── false");
+        degrade();
     }
 
     void DepthVistor::visit(NullExpr *node)
     {
-        cout << "null ";
+        upgrade();
+        println("<<NullExpr>>("+ node->getLocation().toString()+")");
+        degrade();
     }
 
     void DepthVistor::visit(StrExpr *node)
     {
-        cout << "\"" << node->value << "\" ";
+        upgrade();
+        println("<<StrExpr>>("+ node->getLocation().toString()+")");
+        println("value:");
+        println("└── " + node->value);
+        degrade();
     }
 
     void DepthVistor::visit(ArrayExpr *node)
     {
-        cout << "Array : {";
+        upgrade();
+        println("<<ArrayExpr>>("+ node->getLocation().toString()+")");
+        println("elems:");
         for(auto elem : node->elems)
         {
             elem->accept(this);
         }
-        cout << "} ";
+        degrade();
     }
 
     void DepthVistor::visit(UnaryOpExpr *node)
     {
-        if(node->isPrefix)
-        {
-            cout << tokenDesc(node->op) << " ";
-            node->expr->accept(this);
-        }
-        else
-        {
-            node->expr->accept(this);
-            cout << tokenDesc(node->op) << " ";
-        }
+        upgrade();
+        println("<<UnaryOpExpr>>("+ node->getLocation().toString()+")");
+        println("isPrefix:");
+        println(node->isPrefix?"└── true":"└── false");
+        println("op:");
+        println("└── " + tokenDesc(node->op));
+        println("expr:");
+        node->expr->accept(this);
+        degrade();
     }
 
     void DepthVistor::visit(BinaryOpExpr *node)
     {
-        cout << "(";
+        upgrade();
+        println("<<BinaryOpExpr>>("+ node->getLocation().toString()+")");
+        println("op:");
+        println("└── " + tokenDesc(node->op));
+        println("left:");
         node->left->accept(this);
-        cout << tokenDesc(node->op) << " ";
+        println("right:");
         node->right->accept(this);
-        cout << ")";
+        degrade();
     }
 
     void DepthVistor::visit(TernaryOpExpr *node)
     {
+        upgrade();
+        println("<<TernaryOpExpr>>("+ node->getLocation().toString()+")");
+        println("condition:");
         node->condition->accept(this);
-        cout << "? ";
+        println("thenValue:");
         node->thenValue->accept(this);
-        cout << ": ";
+        println("elseValue:");
         node->elseValue->accept(this);
     }
 

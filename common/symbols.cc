@@ -414,34 +414,34 @@ namespace ycc
         	ret = "false";
         	break;
         case TokenTag::LEFT_PAREN:
-        	ret = "left paren";
+        	ret = "(";
         	break;
         case TokenTag::RIGHT_PAREN:
-        	ret = "right paren";
+        	ret = ")";
         	break;
         case TokenTag::LEFT_SQUARE:
-        	ret = "left square";
+        	ret = "[";
         	break;
         case TokenTag::RIGHT_SQUARE:
-        	ret = "right square";
+        	ret = "]";
         	break;
         case TokenTag::LEFT_BRACE:
-        	ret = "left brace";
+        	ret = "{";
         	break;
         case TokenTag::RIGHT_BRACE:
-        	ret = "right brace";
+        	ret = "}";
         	break;
         case TokenTag::SEMICOLON:
-        	ret = "semicolon";
+        	ret = ";";
         	break;
         case TokenTag::COMMA:
-        	ret = "comma";
+        	ret = ",";
         	break;
         case TokenTag::PERIOD:
-        	ret = "period";
+        	ret = ".";
         	break;
         case TokenTag::ASSIGN:
-        	ret = "assign";
+        	ret = "=";
         	break;
         case TokenTag::GREATER_THAN:
         	ret = "greater than";

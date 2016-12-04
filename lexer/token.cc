@@ -34,7 +34,7 @@ namespace ycc
 
     std::string Token::toString() const
     {
-        return "(" + lexeme_ + ", " + desc() + ")";
+        return "<" + lexeme_ + ", " + desc() + ">";
     }
 
 

@@ -9,6 +9,10 @@ namespace ycc
     class DepthVistor : public ASTVistor
     {
     public:
+        DepthVistor();
+        ~DepthVistor() = default;
+
+        virtual void visit(VecNodePtr ast);
         virtual void visit(ASTNode *node);
         virtual void visit(Stmt *node);
         virtual void visit(EmptyStmt *node);
@@ -42,6 +46,13 @@ namespace ycc
         virtual void visit(UnaryOpExpr *node);
         virtual void visit(BinaryOpExpr *node);
         virtual void visit(TernaryOpExpr *node);
+
+    private:
+        void            println(const std::string &msg, bool end = false);
+        void            upgrade();
+        void            degrade();
+
+        int             level;
     };
 }
 
