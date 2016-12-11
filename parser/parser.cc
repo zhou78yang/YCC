@@ -220,6 +220,7 @@ namespace ycc
         // current token is '=' , ',' or ';'
         auto node = new PrimaryStmt(getLocation());
         node->type = type;
+        node->flags = modifiers;
 
         // get symbol info
         SymbolInfo info(symbolTable_->getTypeIndex(type), modifiers);
@@ -227,6 +228,7 @@ namespace ycc
         auto var = new VariableDeclExpr(getLocation());
         var->name = name;
 
+        /* we should not add variable to symbol table in parser
         // add class member to symbol table
         if(modifiers.test(SymbolTag::MEMBER))
         {
@@ -239,6 +241,7 @@ namespace ycc
                 symbolTable_->add(var->name, info);
             }
         }
+        */
 
         // eat [=Expr]
         if(match(TokenTag::ASSIGN, true))
@@ -261,6 +264,7 @@ namespace ycc
             auto var = new VariableDeclExpr(getLocation());
             var->name = token_.lexeme();
 
+            /* we should not add variable to symbol table in parser
             // add class member to symbol table
             if(modifiers.test(SymbolTag::MEMBER))
             {
@@ -273,6 +277,7 @@ namespace ycc
                     symbolTable_->add(var->name, info);
                 }
             }
+            */
             advance();
 
             // eat [=Expr]
@@ -789,10 +794,10 @@ namespace ycc
     }
 
     // CallExpr ::= Identifier([Expr {,Expr}])
-    ExprPtr Parser::parseCall(ExprPtr left)
+    ExprPtr Parser::parseCall(IdentifierExpr *left)
     {
         auto node = new CallExpr(left->getLocation());
-        node->name = left;
+        node->callee = left->name;
 
         advance();                  // eat '('
         // eat [expr]

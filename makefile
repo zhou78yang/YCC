@@ -1,11 +1,12 @@
 VPATH = lexer:common:parser:compiler:vm:test
 OBJS = token.o scanner.o error.o symbols.o symbol_table.o parser.o depth_vistor.o
 DPATH = /bin/ycc
+CXXFLAGS = -std=c++11
 
 ycc: main.cc $(OBJS)
-	clang++ -std=c++11 -o $(DPATH) main.cc $(OBJS); rm *.o
+	clang++ $(CXXFLAGS) -o $(DPATH) main.cc $(OBJS); rm *.o
 %.o: %.cc
-	clang++ -std=c++11 -c $< -o $@
+	clang++ $(CXXFLAGS) -c $< -o $@
 
 .PHONY: clean, uninstall
 clean:

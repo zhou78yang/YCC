@@ -51,7 +51,7 @@ namespace ycc
         ExprPtr         parseExpr(bool optional = false, int precedence = 0);
         ExprPtr         parseIdentifier();
         ExprPtr         parseIndex(ExprPtr left);
-        ExprPtr         parseCall(ExprPtr left);
+        ExprPtr         parseCall(IdentifierExpr *left);
         ExprPtr         parseQualifiedId(ExprPtr left);
         ExprPtr         parseNew();
         ExprPtr         parseInt(bool isChar = false);

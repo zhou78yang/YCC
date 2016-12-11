@@ -279,8 +279,8 @@ namespace ycc
     {
         upgrade();
         println("<<CallExpr>>("+ node->getLocation().toString()+")");
-        println("name:");
-        node->name->accept(this);
+        println("callee:");
+        println("└── " + node->callee);
         println("arguments:");
         for(auto v : node->arguments)
         {

@@ -8,10 +8,14 @@
 
 namespace ycc
 {
+
+    /*******************************************************
+     * Symbol Info
+     *******************************************************/
     class TypeInfo
     {
       public:
-        TypeInfo(std::string name, int wd, int of = -1)
+        TypeInfo(std::string name, int wd = 0, int of = -1)
             : name_(name), width_(wd), arrayOf_(of)
         {}
 
@@ -25,7 +29,6 @@ namespace ycc
       private:
         std::string     name_;
         int             width_;
-        bool            isArray_;
         int             arrayOf_;
     };
 
@@ -79,7 +82,7 @@ namespace ycc
         void                setAttribute(int i);
         bool                check(int i);
 
-        virtual std::string toString() const;
+        virtual std::string toString() const;   // for debug
 
       private:
         int                 typeIndex_;
@@ -129,7 +132,8 @@ namespace ycc
         void                addParameter(int type);
         bool                checkParameter(std::vector<int> args) const;
         bool                checkParameter(int type, int pos) const;
-        std::string         toString() const;
+
+        std::string         toString() const;   // for debug
 
       private:
         std::vector<int>    parameters_;
@@ -141,40 +145,63 @@ namespace ycc
     }
 
 
-    class ClassTable
+
+
+
+    /*****************************************************
+     * Table Declaration
+     *****************************************************/
+    class EnvTable
     {
       public:
-        ClassTable(const std::string &name, ClassTable *prec = nullptr);
+        EnvTable(EnvTable *prec);
 
         void                add(const std::string &name, const SymbolInfo &info);
         bool                hasVariable(const std::string &name, bool searchUp = true) const;
         const SymbolInfo &  getVariableInfo(const std::string &name) const;
+
+        EnvTable *          prec() const;
+        virtual void        dump() = 0;     // for debug
+
+      protected:
+        EnvTable *                          prec_;
+        std::map<std::string, SymbolInfo>   variableTable_;
+    };
+
+    inline EnvTable *EnvTable::prec() const
+    {
+        return prec_;
+    }
+
+    class ClassTable : public EnvTable
+    {
+      public:
+        ClassTable(const std::string &name, EnvTable *prec = nullptr);
+
         void                add(const std::string &name, const MethodInfo &info);
         bool                hasMethod(const std::string &name, bool searchUp = true) const;
         const MethodInfo &  getMethodInfo(const std::string &name) const;
 
-        ClassTable *        prec() const;
         const std::string & className() const;
 
         void                dump(); // for debug
 
       private:
-        ClassTable *                        prec_;
         std::string                         name_;
-        std::map<std::string, SymbolInfo>   variableTable_;
         std::map<std::string, MethodInfo>   methodTable_;
     };
-
-    inline ClassTable * ClassTable::prec() const
-    {
-        return prec_;
-    }
 
     inline const std::string & ClassTable::className() const
     {
         return name_;
     }
 
+    class LocalTable : public EnvTable
+    {
+      public:
+        LocalTable(EnvTable *prec = nullptr);
+        void                dump(); // for debug
+    };
 
 
 
@@ -191,18 +218,20 @@ namespace ycc
         const TypeInfo &    getTypeInfo(int typeIndex) const;
         std::string         getTypeName(int typeIndex) const;
 
-        // classes operations
         void                addClass(const std::string &name, int modifier = 0);
+        // current classes operations
         void                enterClass(const std::string &name);
         void                leaveClass();
+        void                add(const std::string &name, const MethodInfo &info);
+        bool                hasMethod(const std::string &name, bool searchUp = true) const;
+        const MethodInfo &  getMethodInfo(const std::string &name) const;
 
         // current table operations
         void                add(const std::string &name, const SymbolInfo &info);
-        void                add(const std::string &name, const MethodInfo &info);
         bool                hasVariable(const std::string &name, bool searchUP = true) const;
-        bool                hasMethod(const std::string &name, bool searchUp = true) const;
         const SymbolInfo &  getVariableInfo(const std::string &name) const;
-        const MethodInfo &  getMethodInfo(const std::string &name) const;
+        void                enter();
+        void                leave();
 
         void                dump(); // for debug
 
@@ -212,8 +241,10 @@ namespace ycc
       private:
         std::map<std::string, int>          typeTable_;
         std::vector<TypeInfo>               typeInfoTable_;
-        ClassTable*                         currentTable_;
         std::map<std::string, ClassTable*>  classesTable_;
+        EnvTable *                          globalTable_;
+        EnvTable *                          currentTable_;
+        ClassTable *                        currentClass_;
 
         static SymbolTable *                instance_;
     };

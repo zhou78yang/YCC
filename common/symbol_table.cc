@@ -65,18 +65,18 @@ namespace ycc
     }
 
     /*********************************************
-    * class table part
+    * tables part
     *********************************************/
-    ClassTable::ClassTable(const std::string &name, ClassTable *prec /* =nullptr */)
-        : name_(name), prec_(prec)
+    EnvTable::EnvTable(EnvTable *prec)
+        : prec_(prec)
     {}
 
-    void ClassTable::add(const std::string &name, const SymbolInfo &info)
+    void EnvTable::add(const std::string &name, const SymbolInfo &info)
     {
         variableTable_.insert(std::pair<decltype(name), decltype(info)>(name, info));
     }
 
-    bool ClassTable::hasVariable(const std::string &name, bool searchUp /*= true*/) const
+    bool EnvTable::hasVariable(const std::string &name, bool searchUp /*= true*/) const
     {
         auto iter = variableTable_.find(name);
         if(iter != variableTable_.end())
@@ -90,7 +90,7 @@ namespace ycc
         return prec_ ? (prec_->hasVariable(name)) : false;
     }
 
-    const SymbolInfo &ClassTable::getVariableInfo(const std::string &name) const
+    const SymbolInfo & EnvTable::getVariableInfo(const std::string &name) const
     {
         auto iter = variableTable_.find(name);
         if(iter != variableTable_.end())
@@ -99,6 +99,11 @@ namespace ycc
         }
         return prec_->getVariableInfo(name);
     }
+
+
+    ClassTable::ClassTable(const std::string &name, EnvTable *prec)
+        : name_(name), EnvTable(prec)
+    {}
 
     void ClassTable::add(const std::string &name, const MethodInfo &info)
     {
@@ -116,7 +121,7 @@ namespace ycc
         {
             return false;
         }
-        return prec_ ? prec_->hasMethod(name) : false;
+        return prec_ ? ((ClassTable*)prec_)->hasMethod(name) : false;
     }
 
     const MethodInfo &ClassTable::getMethodInfo(const std::string &name) const
@@ -126,7 +131,7 @@ namespace ycc
         {
             return iter->second;
         }
-        return prec_->getMethodInfo(name);
+        return ((ClassTable*)prec_)->getMethodInfo(name);
     }
 
     void ClassTable::dump()
@@ -139,6 +144,20 @@ namespace ycc
         }
         cout << "method table and size : " << methodTable_.size() << endl;
         for(auto line : methodTable_)
+        {
+            cout << line.first << " -> " << line.second.toString() << endl;
+        }
+    }
+
+    LocalTable::LocalTable(EnvTable *prec)
+        : EnvTable(prec)
+    {}
+
+    void LocalTable::dump()
+    {
+        cout << "LocalTable :" << endl;
+        cout << "variable table and size : " << variableTable_.size() << endl;
+        for(auto line : variableTable_)
         {
             cout << line.first << " -> " << line.second.toString() << endl;
         }
@@ -160,13 +179,16 @@ namespace ycc
 
     SymbolTable::SymbolTable()
     {
-        currentTable_ = new ClassTable("global");
+        currentClass_ = new ClassTable("global");
+        globalTable_ = currentClass_;
+        currentTable_ = globalTable_;
 
         addType(TypeInfo("void", 0));
         addType(TypeInfo("int", 4));     addType(TypeInfo("byte", 1));
         addType(TypeInfo("short", 2));   addType(TypeInfo("long", 8));
         addType(TypeInfo("char", 2));    addType(TypeInfo("boolean", 1));
         addType(TypeInfo("float", 4));   addType(TypeInfo("double", 8));
+
         // for debug
         addType("String");
     }
@@ -215,28 +237,41 @@ namespace ycc
         info.setAttribute(SymbolTag::CLASS);
         currentTable_->add(name, info);
 
-        currentTable_ = new ClassTable(name, currentTable_);
-        classesTable_.insert(std::pair<std::string, ClassTable*>(name, currentTable_));
+        currentClass_ = new ClassTable(name, currentClass_);
+        classesTable_.insert(std::pair<std::string, ClassTable*>(name, currentClass_));
+        currentTable_ = currentClass_;
     }
 
+    // current class operations
     void SymbolTable::enterClass(const std::string &name)
     {
-        currentTable_ = classesTable_.find(name)->second;
+        currentClass_ = classesTable_.find(name)->second;
+        currentTable_ = currentClass_;
     }
 
     void SymbolTable::leaveClass()
     {
-        currentTable_ = currentTable_->prec();
-    }
-
-
-    // current table operations
-    void SymbolTable::add(const std::string &name, const SymbolInfo &info)
-    {
-        currentTable_->add(name, info);
+        currentClass_ = (ClassTable*)currentTable_->prec();
+        currentTable_ = currentClass_;
     }
 
     void SymbolTable::add(const std::string &name, const MethodInfo &info)
+    {
+        currentClass_->add(name, info);
+    }
+
+    bool SymbolTable::hasMethod(const std::string &name, bool searchUp) const
+    {
+        return currentClass_->hasMethod(name, searchUp);
+    }
+
+    const MethodInfo & SymbolTable::getMethodInfo(const std::string &name) const
+    {
+        return currentClass_->getMethodInfo(name);
+    }
+
+    // current table operations
+    void SymbolTable::add(const std::string &name, const SymbolInfo &info)
     {
         currentTable_->add(name, info);
     }
@@ -246,19 +281,21 @@ namespace ycc
         return currentTable_->hasVariable(name, searchUp);
     }
 
-    bool SymbolTable::hasMethod(const std::string &name, bool searchUp) const
-    {
-        return currentTable_->hasMethod(name, searchUp);
-    }
-
     const SymbolInfo &SymbolTable::getVariableInfo(const std::string &name) const
     {
         return currentTable_->getVariableInfo(name);
     }
 
-    const MethodInfo & SymbolTable::getMethodInfo(const std::string &name) const
+    void SymbolTable::enter()
     {
-        return currentTable_->getMethodInfo(name);
+        currentTable_ = new LocalTable(currentTable_);
+    }
+
+    void SymbolTable::leave()
+    {
+        auto oldTable = (LocalTable*)currentTable_;
+        currentTable_ = currentTable_->prec();
+        delete oldTable;
     }
 
     void SymbolTable::dump()

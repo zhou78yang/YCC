@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include "../lexer/token.h"
+#include "../common/symbol_table.h"
 #include "vistor.h"
 
 namespace ycc
@@ -101,6 +102,7 @@ namespace ycc
         }
 
         std::string                 type;
+        SymbolFlag                  flags;
         VecExprPtr                  decls;
     };
 
@@ -342,7 +344,8 @@ namespace ycc
             v->visit(this);
         }
 
-        ExprPtr         name;
+        //ExprPtr         name;
+        std::string     callee;
         VecExprPtr      arguments;
     };
 
