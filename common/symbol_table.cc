@@ -15,6 +15,16 @@ namespace ycc
         return name_ == t.name_;
     }
 
+    TypeInfo TypeInfo::VOID("void", 0);
+    TypeInfo TypeInfo::INT("int", 4);
+    TypeInfo TypeInfo::BYTE("byte", 1);
+    TypeInfo TypeInfo::SHORT("short", 2);
+    TypeInfo TypeInfo::LONG("long", 8);
+    TypeInfo TypeInfo::CHAR("char", 2);
+    TypeInfo TypeInfo::BOOLEAN("boolean", 1);
+    TypeInfo TypeInfo::FLOAT("float", 4);
+    TypeInfo TypeInfo::DOUBLE("double", 8);
+
 
     std::string SymbolInfo::toString() const
     {
@@ -183,11 +193,15 @@ namespace ycc
         globalTable_ = currentClass_;
         currentTable_ = globalTable_;
 
-        addType(TypeInfo("void", 0));
-        addType(TypeInfo("int", 4));     addType(TypeInfo("byte", 1));
-        addType(TypeInfo("short", 2));   addType(TypeInfo("long", 8));
-        addType(TypeInfo("char", 2));    addType(TypeInfo("boolean", 1));
-        addType(TypeInfo("float", 4));   addType(TypeInfo("double", 8));
+        addType(TypeInfo::VOID);
+        addType(TypeInfo::BOOLEAN);
+        addType(TypeInfo::BYTE);
+        addType(TypeInfo::CHAR);    
+        addType(TypeInfo::SHORT);
+        addType(TypeInfo::INT);
+        addType(TypeInfo::LONG);
+        addType(TypeInfo::FLOAT);
+        addType(TypeInfo::DOUBLE);
 
         // for debug
         addType("String");

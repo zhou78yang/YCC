@@ -26,6 +26,9 @@ namespace ycc
         int             arrayOf() const;
         bool operator   ==(const TypeInfo &);
 
+        static TypeInfo VOID, INT, BYTE, SHORT, LONG, 
+                        CHAR, BOOLEAN, FLOAT, DOUBLE;
+
       private:
         std::string     name_;
         int             width_;
@@ -79,7 +82,7 @@ namespace ycc
         bool                isArray() const;
         int                 getArraySize() const;
         void                setArraySize(int s);
-        void                setAttribute(int i);
+        void                setAttribute(int i, int attr = 1);
         bool                check(int i);
 
         virtual std::string toString() const;   // for debug
@@ -110,9 +113,9 @@ namespace ycc
         arraySize_ = s;
     }
 
-    inline void SymbolInfo::setAttribute(int i)
+    inline void SymbolInfo::setAttribute(int i, int attr)
     {
-        flags_.set(i);
+        flags_.set(i, attr);
     }
 
     inline bool SymbolInfo::check(int i)
