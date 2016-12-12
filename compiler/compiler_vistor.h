@@ -15,10 +15,7 @@ namespace ycc
         CompilerVistor();
         ~CompilerVistor() = default;
 
-        bool check(VecNodePtr ast);
-
-    private:
-        void visit(VecNodePtr ast);
+		void visit(VecNodePtr ast);
         void visit(ASTNode *node);
         void visit(Stmt *node);
         void visit(EmptyStmt *node);
@@ -53,13 +50,24 @@ namespace ycc
         void visit(BinaryOpExpr *node);
         void visit(TernaryOpExpr *node);
 
+        bool check(VecNodePtr ast);
+
+    private:
+
+
         void errorReport(const std::string &msg, const TokenLocation &loc, ErrorType tag);
         bool numeric(int typeIndex);
         int  maxType(int type1, int type2);
+
     private:
+		void            upgrade();
+        void            degrade();
+
+        int             level;
 
         // symbol table info
-        SymbolTable *   symbolTable_;
+        SymbolTable     *symbolTable_;
+        SymbolInfo      *info;
         bool            errorFlag_;
     };
 

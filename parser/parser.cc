@@ -184,11 +184,15 @@ namespace ycc
         advance();                  // eat type
         while(match(TokenTag::LEFT_SQUARE, true))
         {
+
+            int typeIndex = symbolTable_->getTypeIndex(type);
+            int wd = symbolTable_->getTypeInfo(typeIndex).getWidth();
+
             match(TokenTag::RIGHT_SQUARE, token_.lexeme(), true);
             type += "[]";
             if(!symbolTable_->hasType(type))
             {
-                symbolTable_->addType(type);
+                symbolTable_->addType(type, wd);
             }
         }
 
@@ -322,11 +326,15 @@ namespace ycc
 
             while(match(TokenTag::LEFT_SQUARE, true))
             {
+
+                int typeIndex = symbolTable_->getTypeIndex(parameterType);
+                int wd = symbolTable_->getTypeInfo(typeIndex).getWidth();
+
                 match(TokenTag::RIGHT_SQUARE, token_.lexeme(), true);
                 parameterType += "[]";
                 if(!symbolTable_->hasType(parameterType))
                 {
-                    symbolTable_->addType(parameterType);
+                    symbolTable_->addType(parameterType, wd);
                 }
             }
 
@@ -335,7 +343,7 @@ namespace ycc
             advance();
 
             // add parameter to method info
-            info.addParameter(symbolTable_->getTypeIndex(parameterType));
+            info.addParameter(symbolTable_->getTypeIndex(parameterType), parameter);
 
             // eat { ,type name }
             while(!match(TokenTag::RIGHT_PAREN))
@@ -350,11 +358,14 @@ namespace ycc
 
                 while(match(TokenTag::LEFT_SQUARE, true))
                 {
+                    int typeIndex = symbolTable_->getTypeIndex(parameterType);
+                    int wd = symbolTable_->getTypeInfo(typeIndex).getWidth();
+
                     match(TokenTag::RIGHT_SQUARE, token_.lexeme(), true);
                     parameterType += "[]";
                     if(!symbolTable_->hasType(parameterType))
                     {
-                        symbolTable_->addType(parameterType);
+                        symbolTable_->addType(parameterType, wd);
                     }
                 }
 
@@ -362,7 +373,7 @@ namespace ycc
                 advance();
 
                 // add parameter to symbol table
-                info.addParameter(symbolTable_->getTypeIndex(parameterType));
+                info.addParameter(symbolTable_->getTypeIndex(parameterType), parameter);
             }
         }
         match(TokenTag::RIGHT_PAREN, token_.lexeme(), true);
@@ -620,11 +631,14 @@ namespace ycc
             // array check
             while(match(TokenTag::LEFT_SQUARE, true))
             {
+                int typeIndex = symbolTable_->getTypeIndex(type);
+                int wd = symbolTable_->getTypeInfo(typeIndex).getWidth();
+
                 match(TokenTag::RIGHT_SQUARE, token_.lexeme(), true);
                 type += "[]";
                 if(!symbolTable_->hasType(type))
                 {
-                    symbolTable_->addType(type);
+                    symbolTable_->addType(type, wd);
                 }
             }
 
@@ -717,7 +731,7 @@ namespace ycc
             auto p = getSymbolPrecedence(token_.tag());
             if(isInfixOp(token_.tag()))
             {
-                if(p > precedence)
+                if(p >= precedence)
                 {
                     left = parseBinaryOp(left, p);
                     continue;

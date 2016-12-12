@@ -20,6 +20,7 @@ enum OpTag
     DUMP_TOKENS,            // dump token stream
     DUMP_AST,               // dump ast
     DUMP_IR,                // dump ir list
+    DUMP_SYMBOL_TABLE,      // dump symbol table
     OUTPUT                  // output file name
 };
 
@@ -114,6 +115,7 @@ void init(int argc, char *argv[])
     opMap.insert(std::pair<std::string, OpTag>("--dump-tokens", OpTag::DUMP_TOKENS));
     opMap.insert(std::pair<std::string, OpTag>("--dump-ast", OpTag::DUMP_AST));
     opMap.insert(std::pair<std::string, OpTag>("--dump-ir", OpTag::DUMP_IR));
+    opMap.insert(std::pair<std::string, OpTag>("--dump-symbol-table", OpTag::DUMP_SYMBOL_TABLE));
     opMap.insert(std::pair<std::string, OpTag>("-h", OpTag::HELP));
     opMap.insert(std::pair<std::string, OpTag>("--help", OpTag::HELP));
     opMap.insert(std::pair<std::string, OpTag>("-o", OpTag::OUTPUT));

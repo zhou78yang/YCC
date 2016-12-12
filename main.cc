@@ -2,6 +2,7 @@
 #include "./lexer/scanner.h"
 #include "./parser/parser.h"
 #include "./compiler/depth_vistor.h"
+#include "./compiler/compiler_vistor.h"
 #include "./main.hpp"
 
 using namespace ycc;
@@ -61,7 +62,13 @@ int main(int argc, char *argv[])
         vistor->visit(ast);
     }
 
-    SymbolTable::getInstance()->dump();
+    auto compilerVistor = new CompilerVistor();
+    compilerVistor->visit(ast);
+
+    if(checkOption(OpTag::DUMP_SYMBOL_TABLE))
+    {
+        SymbolTable::getInstance()->dump();
+    }
 
     ExceptionHandler::getInstance()->report();
 
