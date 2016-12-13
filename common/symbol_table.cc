@@ -69,11 +69,11 @@ namespace ycc
     std::string MethodInfo::toString() const
     {
         std::string ret = SymbolInfo::toString();
-        ret += " :";
+        ret += " : ";
         auto symbolTable = SymbolTable::getInstance();
-        for(auto p : paramTypes_)
+        for(int i = 0; i < paramTypes_.size(); i++)
         {
-            ret += " " + symbolTable->getTypeName(p);
+            ret += symbolTable->getTypeName(paramTypes_[i]) + " " + parameters_[i] + ", ";
         }
         return ret;
     }
@@ -378,8 +378,6 @@ namespace ycc
         }
 
         baseStack_.push_back(subroutineTable_.size());
-
-        cout << "move base pointer to " << baseStack_.back() << ":\n";
     }
 
     void SymbolTable::leave()
@@ -403,11 +401,8 @@ namespace ycc
         baseStack_.pop_back();
         if(baseStack_.empty())
         {
-            cout << "exit method body" << endl;
-        }
-        else
-        {
-            cout << "move base pointer back to " << baseStack_.back() << ":\n";
+            cout << "---------------------------------" << endl;
+            cout << "exit method body" << endl << endl;
         }
     }
 

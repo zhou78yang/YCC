@@ -348,7 +348,7 @@ namespace ycc
             // eat { ,type name }
             while(!match(TokenTag::RIGHT_PAREN))
             {
-                if(!match(TokenTag::COMMA, token_.lexeme()))
+                if(!match(TokenTag::COMMA, token_.lexeme(), true))
                 {
                     break;
                 }

@@ -13,12 +13,14 @@ public class RoutineTableTest
 
     }
 
-    /*
-    public int add(int x, int y)
+    int add(int a, int b)
     {
-        int ret = x + y;
+        int ret = a + b;
         return ret;
     }
-    */
+
+    void print(String msg)
+    {
+    }
 
 }

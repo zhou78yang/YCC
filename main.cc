@@ -39,9 +39,7 @@ int main(int argc, char *argv[])
     {
         // scanner & error report test
         Scanner dumpTokens(srcFileName);
-        cout << "******************************************" << endl;
-        cout << "* print token stream here" << endl;
-        cout << "******************************************" << endl;
+        cout << "print token stream of file " << srcFileName << " begin..." << endl;
         while(dumpTokens.getToken().tag() != TokenTag::END_OF_FILE)
         {
             auto token = dumpTokens.getNextToken();
@@ -50,20 +48,30 @@ int main(int argc, char *argv[])
             cout << token.toString() << "\n";
         }
         cout << endl;
+        cout << "print token stream end..." << endl;
+        return 0;
     }
 
+    cout << "--ycc compiler--" << endl;
+    cout << "parse file " << srcFileName << " begin..." << endl;
     Scanner scanner(srcFileName);
     Parser parser(scanner);
     auto ast = parser.parse();
+    cout << "parse file " << srcFileName << " end..." << endl;
+
 
     if(checkOption(OpTag::DUMP_AST))
     {
+        cout << "print ast begin..." << endl;
         DepthVistor *vistor = new DepthVistor();
         vistor->visit(ast);
+        cout << "print ast end..." << endl;
     }
 
+    cout << "semantic analyzed begin..." << endl;
     auto compilerVistor = new CompilerVistor();
     compilerVistor->visit(ast);
+    cout << "semantic analyzed end..." << endl;
 
     if(checkOption(OpTag::DUMP_SYMBOL_TABLE))
     {

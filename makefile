@@ -4,7 +4,7 @@ DPATH = /bin/ycc
 CXXFLAGS = -std=c++11
 
 ycc: main.cc $(OBJS)
-	clang++ $(CXXFLAGS) -o $(DPATH) main.cc $(OBJS)
+	clang++ $(CXXFLAGS) -o $(DPATH) main.cc $(OBJS); rm *.o
 %.o: %.cc
 	clang++ $(CXXFLAGS) -c $< -o $@
 
