@@ -15,7 +15,7 @@ namespace ycc
         CompilerVistor();
         ~CompilerVistor() = default;
 
-		void visit(VecNodePtr ast);
+        void visit(VecNodePtr ast);
         void visit(ASTNode *node);
         void visit(Stmt *node);
         void visit(EmptyStmt *node);
@@ -60,17 +60,17 @@ namespace ycc
         int  maxType(int type1, int type2);
 
     private:
-		void            upgrade();
-        void            degrade();
-
-        int             level;
 
         // symbol table info
         SymbolTable     *symbolTable_;
         SymbolInfo      *info;
         bool            errorFlag_;
+    private:
+        bool             variableFlag_;
     };
 
 }
 
 #endif
+
+

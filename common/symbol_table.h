@@ -1,10 +1,12 @@
 #ifndef SYMBOL_TABLE_H_
 #define SYMBOL_TABLE_H_
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <bitset>
 #include <map>
+
 
 namespace ycc
 {
@@ -83,7 +85,7 @@ namespace ycc
         int                 getArraySize() const;
         void                setArraySize(int s);
         void                setAttribute(int i, int attr = 1);
-        bool                check(int i);
+        bool                check(int i) const;
 
         virtual std::string toString() const;   // for debug
 
@@ -120,7 +122,7 @@ namespace ycc
         flags_.set(i, attr);
     }
 
-    inline bool SymbolInfo::check(int i)
+    inline bool SymbolInfo::check(int i) const
     {
         return flags_.test(i);
     }
@@ -228,6 +230,14 @@ namespace ycc
         void                enter();
         void                leave();
 
+        // symbol operations
+        void                addStatic(const std::string &name, const SymbolInfo &info);
+        std::string         getQualifier();
+        std::string         getQualifier(const std::string &methodName);
+        void                addLiteral(const std::string &literal);
+        std::string         getLiteralName(const std::string &literal);
+
+        void                IRdump(std::ostream &out = std::cout);
         void                dump(); // for debug
 
       private:
@@ -240,10 +250,14 @@ namespace ycc
         std::map<std::string, ClassTable*>  classesTable_;
         ClassTable *                        globalTable_;
         ClassTable *                        currentClass_;
+        std::string                         currentMethod_;
 
         std::vector<std::string>            subroutineTable_;
         std::vector<SymbolInfo>             localInfoTable_;
         std::vector<int>                    baseStack_;
+
+        std::map<std::string, SymbolInfo>   staticTable_;
+        std::map<std::string, std::string>  literalTable_;
 
         static SymbolTable *                instance_;
     };

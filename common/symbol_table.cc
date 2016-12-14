@@ -305,10 +305,18 @@ namespace ycc
         {
             // class member
             currentClass_->add(name, info);
+            if(info.check(SymbolTag::STATIC))
+            {
+                addStatic(getQualifier()+name, info);
+            }
             return ;
         }
         subroutineTable_.push_back(name);
         localInfoTable_.push_back(info);
+        if(info.check(SymbolTag::STATIC))
+        {
+            addStatic(getQualifier(currentMethod_)+name, info);
+        }
     }
 
     bool SymbolTable::hasVariable(const std::string &name, bool searchUp) const
@@ -354,8 +362,9 @@ namespace ycc
     {
         baseStack_.clear();
         baseStack_.push_back(0);
+        currentMethod_ = methodName;
 
-        cout << "enter new method " << methodName << ":\n"; // for debug
+        //cout << "enter new method " << methodName << ":\n"; // for debug
 
         auto methodInfo = getMethodInfo(methodName);
         auto types = methodInfo.paramTypes_;
@@ -387,24 +396,88 @@ namespace ycc
             return ;
         }
 
-        cout << "---------------------------------" << endl;
-
         while(subroutineTable_.size() > baseStack_.back())
         {
+            /*
             cout << subroutineTable_.back() << " -> "
                  << localInfoTable_.back().toString() << endl;
+            */
 
             subroutineTable_.pop_back();
             localInfoTable_.pop_back();
         }
 
         baseStack_.pop_back();
+        /*
         if(baseStack_.empty())
         {
             cout << "---------------------------------" << endl;
-            cout << "exit method body" << endl << endl;
+            cout << "exit " << currentMethod_ << endl << endl;
         }
+        */
     }
+
+
+
+
+    void SymbolTable::addStatic(const std::string &name, const SymbolInfo &info)
+    {
+        staticTable_.insert(std::pair<std::string, SymbolInfo>(name, info));
+    }
+
+    std::string SymbolTable::getQualifier()
+    {
+        auto table = currentClass_;
+        std::string qual = "";
+        while(table->prec())
+        {
+            qual = table->className() + "." + qual;
+            table = table->prec();
+        }
+        return qual;
+    }
+
+    std::string SymbolTable::getQualifier(const std::string &methodName)
+    {
+        return getQualifier() + methodName + ".";
+    }
+
+
+    void SymbolTable::addLiteral(const std::string &literal)
+    {
+        int size = literalTable_.size();
+        std::string name = ".str."+std::to_string(size);
+        literalTable_.insert(std::pair<std::string, std::string>(literal, name));
+    }
+
+    std::string SymbolTable::getLiteralName(const std::string &name)
+    {
+        auto iter = literalTable_.find(name);
+        return iter->second;
+    }
+
+
+    void SymbolTable::IRdump(std::ostream &out /* = cout */)
+    {
+        out << endl;
+        // type dump
+        // string literal dump
+        for(auto line : literalTable_)
+        {
+
+            out << "@" << line.second << " = private unnamed_addr constant ";
+            out << "c\"" << line.first << "\"" << endl;
+        }
+        // static variable dump
+        for(auto line : staticTable_)
+        {
+            int wd = typeInfoTable_[line.second.getType()].getWidth();
+            out << "@" << line.first << " = internal global i"
+                << wd*8 << " 0, align " << wd << endl;
+        }
+        out << endl;
+    }
+
 
     void SymbolTable::dump()
     {
