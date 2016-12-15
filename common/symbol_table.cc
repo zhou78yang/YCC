@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "symbol_table.h"
 
 
@@ -32,7 +33,7 @@ namespace ycc
     std::string SymbolInfo::toString() const
     {
         std::string type = SymbolTable::getInstance()->getTypeName(typeIndex_);
-        return "<" + type + ": " + flags_.to_string() + ">";
+        return "<" + fullName_ + " " + type + ": " + flags_.to_string() + ">";
     }
 
     void MethodInfo::addParameter(int type, std::string name)
@@ -216,13 +217,13 @@ namespace ycc
         addType(TypeInfo::DOUBLE);
 
         // for debug
-        addType("String");
+        addType("String", 1, getTypeIndex("char"));
     }
 
     // type operations
-    int SymbolTable::addType(const std::string &name, int wd /*=0*/)
+    int SymbolTable::addType(const std::string &name, int wd /*=0*/, int arrayOf /*=-1*/)
     {
-        return addType(TypeInfo(name, wd));
+        return addType(TypeInfo(name, wd, arrayOf));
     }
 
     int SymbolTable::addType(const TypeInfo &info)
@@ -255,6 +256,48 @@ namespace ycc
         return typeInfoTable_[typeIndex].getName();
     }
 
+    std::string SymbolTable::getTypeIR(int typeIndex)
+    {
+        std::string typeIR = "";
+        if(typeInfoTable_[typeIndex] == TypeInfo::VOID)
+        {
+            return "void";
+        }
+        else if(typeInfoTable_[typeIndex] == TypeInfo::DOUBLE)
+        {
+            return "double";
+        }
+        else if(typeInfoTable_[typeIndex] == TypeInfo::FLOAT)
+        {
+            return "float";
+        }
+        else
+        {
+            typeIR = "i" + std::to_string(typeInfoTable_[typeIndex].getWidth()*8);
+        }
+        while(typeInfoTable_[typeIndex].arrayOf() != -1)
+        {
+            typeIR += "*";
+            typeIndex = typeInfoTable_[typeIndex].arrayOf();
+        }
+        return typeIR;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // class operations
     void SymbolTable::addClass(const std::string &name, int modifier /*=0*/)
     {
@@ -278,8 +321,9 @@ namespace ycc
         currentClass_ = currentClass_->prec();
     }
 
-    void SymbolTable::add(const std::string &name, const MethodInfo &info)
+    void SymbolTable::add(const std::string &name, MethodInfo info)
     {
+        info.setFullName(getQualifier()+name);
         currentClass_->add(name, info);
     }
 
@@ -299,23 +343,28 @@ namespace ycc
     }
 
     // current table operations
-    void SymbolTable::add(const std::string &name, const SymbolInfo &info)
+    void SymbolTable::add(const std::string &name, SymbolInfo info)
     {
+        // member variable
         if(baseStack_.empty())
         {
             // class member
+            info.setFullName(getQualifier()+name);
             currentClass_->add(name, info);
             if(info.check(SymbolTag::STATIC))
             {
-                addStatic(getQualifier()+name, info);
+                addStatic(info.getFullName(), info);
             }
             return ;
         }
+
+        // local variable
+        info.setFullName(getQualifier(currentMethod_)+name);
         subroutineTable_.push_back(name);
         localInfoTable_.push_back(info);
         if(info.check(SymbolTag::STATIC))
         {
-            addStatic(getQualifier(currentMethod_)+name, info);
+            addStatic(info.getFullName(), info);
         }
     }
 
@@ -443,31 +492,62 @@ namespace ycc
     }
 
 
-    void SymbolTable::addLiteral(const std::string &literal)
+    std::string SymbolTable::addLiteral(std::string literal)
     {
-        int size = literalTable_.size();
-        std::string name = ".str."+std::to_string(size);
-        literalTable_.insert(std::pair<std::string, std::string>(literal, name));
+        int size = literal.size();
+        for(int i = 0; i < literal.size(); i++)
+        {
+            if(literal[i] == '\\')
+            {
+                size -= 2;
+            }
+        }
+        literal += "\\00";
+        size += 1;
+        std::string name = ".str."+std::to_string(literalList_.size());
+        SymbolInfo info(getTypeIndex("String"), 1, size);
+
+        literalList_.push_back(literal);
+        literalInfo_.push_back(info);
+        return name;
     }
 
-    std::string SymbolTable::getLiteralName(const std::string &name)
+    const SymbolInfo & SymbolTable::getLiteralInfo(const std::string &name)
     {
-        auto iter = literalTable_.find(name);
-        return iter->second;
+        int pos = 0;
+        for(int i = 5; i < name.size(); i++)
+        {
+            pos = pos * 10 + i - '0';
+        }
+        return literalInfo_[pos];
     }
 
 
-    void SymbolTable::IRdump(std::ostream &out /* = cout */)
+
+
+
+    void SymbolTable::addModuleName(const std::string &name)
+    {
+        apiList_.push_back(name);
+    }
+
+    void SymbolTable::dumpIR(std::ostream &out /* = cout */)
     {
         out << endl;
-        // type dump
-        // string literal dump
-        for(auto line : literalTable_)
+        // TODO: type dump
+        for(auto line : classesTable_)
         {
 
-            out << "@" << line.second << " = private unnamed_addr constant ";
-            out << "c\"" << line.first << "\"" << endl;
         }
+
+        // string literal dump
+        for(int i = 0; i < literalList_.size(); i++)
+        {
+            out << "@.str." << i << " = private unnamed_addr constant"
+                << " [" << literalInfo_[i].getArraySize() << " x i8] "
+                << "c\"" << literalList_[i] << "\", align 1\n";
+        }
+
         // static variable dump
         for(auto line : staticTable_)
         {
@@ -476,6 +556,20 @@ namespace ycc
                 << wd*8 << " 0, align " << wd << endl;
         }
         out << endl;
+
+        // api dump
+        for(auto apiName : apiList_)
+        {
+            auto path = "./api/" + apiName + ".vm";
+            std::ifstream in;
+            in.open(path);
+            std::string line;
+            while(std::getline(in, line))
+            {
+                out << line << endl;
+            }
+            in.close();
+        }
     }
 
 
@@ -484,9 +578,7 @@ namespace ycc
         cout << "--------------type table-----------" << endl;
         for(auto iter : typeTable_)
         {
-            cout << "( " << iter.second << ", " << iter.first
-                 << " width: " << typeInfoTable_[iter.second].getWidth()
-                 << ") ";
+            cout << "<" << iter.first << ", " << getTypeIR(iter.second) << "> \n";
         }
         cout << endl;
 

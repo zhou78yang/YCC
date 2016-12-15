@@ -234,6 +234,11 @@ namespace ycc
         return false;
     }
 
+    std::string change_Op(TokenTag tag)
+    {
+        return "op";
+    }
+
     std::string tokenDesc(TokenTag tag)
     {
         std::string ret = "";

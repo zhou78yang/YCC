@@ -3,17 +3,17 @@
 
 #include "../parser/vistor.h"
 #include "../parser/ast.hpp"
+#include <fstream>
 
 namespace ycc
 {
     class IRGenerator : public ASTVistor
     {
     public:
-        IRGenerator();
+        IRGenerator(const std::string &name);
         ~IRGenerator() = default;
 
         void gene(VecNodePtr ast);
-        void visit(VecNodePtr ast);
 
     private:
         void visit(ASTNode *node);
@@ -51,17 +51,19 @@ namespace ycc
         void visit(TernaryOpExpr *node);
 
         // generator tools
-        void writeMethod_begin(int type, std::string name);
-        void writeMethod_end(int type);
+        void writeMethod_begin(std::string name,MethodInfo mInfo);
+        void writeMethod_end(MethodInfo mInfo);
         void writeAlloca(std::string Name,int Type);
         void writeStore(int Type,std::string oneName,std::string twoName);        // twoName->oneName
         void writeLoad(int labelCount,int Type,std::string Name);                //Name->labelCount
         void writeLabel(int count);
         void writeJump(int Label);
         void writeCJump(int C,int thenLabel,int elseLabel);
+        void writeCall(int labelCount,std::string name,MethodInfo mInfo);
         void writeBinaryOp();
 
     private:
+    	std::ofstream 		output_;
     	SymbolInfo      	*info;
         SymbolTable *       symbolTable_;
         int                 labelCount_;
@@ -72,7 +74,10 @@ namespace ycc
         bool 				constant_;
         std::string			constant_value;
         bool				incre_;
-        std::string        	change_Op(std::string op);
+        bool				callRet_;
+        bool				call_value;
+        int 				call_index;
+        std::string 		call_name;
     };
 }
 

@@ -13,6 +13,7 @@ namespace ycc
     extern int  isModifier(TokenTag tag);
     extern bool isBasicType(TokenTag tag);
     extern std::string tokenDesc(TokenTag tag);
+    extern std::string change_Op(TokenTag tag);
 }
 
 #endif

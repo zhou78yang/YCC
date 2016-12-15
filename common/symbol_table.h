@@ -61,7 +61,7 @@ namespace ycc
     enum SymbolTag
     {
         CLASS = 0,      VARIABLE,       MEMBER,         METHOD,
-        CONSTRUCTOR,    BUILTIN,        PARAMETER,      UNDEFINE, // = null
+        CONSTRUCTOR,    BUILTIN,        PARAMETER,      UNDEFINED, // = null
         // modifiers
         PUBLIC,         PROTECTED,      PRIVATE,        STATIC,
         ABSTRACT,       FINAL,          NATIVE,         SYNCHRONIZED,
@@ -84,6 +84,8 @@ namespace ycc
         bool                isArray() const;
         int                 getArraySize() const;
         void                setArraySize(int s);
+        std::string         getFullName();
+        void                setFullName(const std::string &name);
         void                setAttribute(int i, int attr = 1);
         bool                check(int i) const;
 
@@ -95,6 +97,7 @@ namespace ycc
         int                 typeIndex_;
         SymbolFlag          flags_;
         int                 arraySize_;
+        std::string         fullName_;
     };
 
     inline int SymbolInfo::getType() const
@@ -115,6 +118,16 @@ namespace ycc
     inline void SymbolInfo::setArraySize(int s)
     {
         arraySize_ = s;
+    }
+
+    inline std::string SymbolInfo::getFullName()
+    {
+        return fullName_;
+    }
+
+    inline void SymbolInfo::setFullName(const std::string &name)
+    {
+        fullName_ = name;
     }
 
     inline void SymbolInfo::setAttribute(int i, int attr)
@@ -205,24 +218,25 @@ namespace ycc
         static SymbolTable* getInstance();
 
         // type operations
-        int                 addType(const std::string &name, int wd = 0);
+        int                 addType(const std::string &name, int wd = 0, int arrayOf = -1);
         int                 addType(const TypeInfo &info);
         bool                hasType(const std::string &name) const;
         int                 getTypeIndex(const std::string &name) const;
         const TypeInfo &    getTypeInfo(int typeIndex) const;
         std::string         getTypeName(int typeIndex) const;
+        std::string         getTypeIR(int typeIndex);
 
         void                addClass(const std::string &name, int modifier = 0);
         // current classes operations
         void                enterClass(const std::string &name);
         void                leaveClass();
-        void                add(const std::string &name, const MethodInfo &info);
+        void                add(const std::string &name, MethodInfo info);
         bool                hasMethod(const std::string &name, bool searchUp = true) const;
         const MethodInfo &  getMethodInfo(const std::string &name) const;
         void                setMethodInfo(const std::string &name, const MethodInfo &info);
 
         // current table operations
-        void                add(const std::string &name, const SymbolInfo &info);
+        void                add(const std::string &name, SymbolInfo info);
         bool                hasVariable(const std::string &name, bool searchUP = true) const;
         const SymbolInfo &  getVariableInfo(const std::string &name) const;
         void                setVariableInfo(const std::string &name, const SymbolInfo &info);
@@ -234,10 +248,12 @@ namespace ycc
         void                addStatic(const std::string &name, const SymbolInfo &info);
         std::string         getQualifier();
         std::string         getQualifier(const std::string &methodName);
-        void                addLiteral(const std::string &literal);
-        std::string         getLiteralName(const std::string &literal);
+        std::string         addLiteral(std::string literal);
+        const SymbolInfo &  getLiteralInfo(const std::string &name);
 
-        void                IRdump(std::ostream &out = std::cout);
+        // API and IR
+        void                addModuleName(const std::string &apiName);
+        void                dumpIR(std::ostream &out = std::cout);
         void                dump(); // for debug
 
       private:
@@ -257,7 +273,10 @@ namespace ycc
         std::vector<int>                    baseStack_;
 
         std::map<std::string, SymbolInfo>   staticTable_;
-        std::map<std::string, std::string>  literalTable_;
+        std::vector<SymbolInfo>             literalInfo_;
+        std::vector<std::string>            literalList_;
+
+        std::vector<std::string>            apiList_;
 
         static SymbolTable *                instance_;
     };

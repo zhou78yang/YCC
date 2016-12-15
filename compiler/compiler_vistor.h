@@ -15,7 +15,9 @@ namespace ycc
         CompilerVistor();
         ~CompilerVistor() = default;
 
-		void visit(VecNodePtr ast);
+        bool check(VecNodePtr ast);
+
+    private:
         void visit(ASTNode *node);
         void visit(Stmt *node);
         void visit(EmptyStmt *node);
@@ -50,26 +52,27 @@ namespace ycc
         void visit(BinaryOpExpr *node);
         void visit(TernaryOpExpr *node);
 
-        bool check();
-
-    private:
-
-
         void errorReport(const std::string &msg, const TokenLocation &loc, ErrorType tag);
         bool numeric(int typeIndex);
         int  maxType(int type1, int type2);
 
     private:
-
         // symbol table info
         SymbolTable     *symbolTable_;
         SymbolInfo      *info;
         bool            errorFlag_;
+
     private:
     	bool 			variableFlag_;
+    	bool 			initVariable_;
+
+    	std::string		variableName_;
+
+    	bool			call_value;
+    	std::string 	call_name;
+    	int 			call_index;
     };
 
 }
 
 #endif
-

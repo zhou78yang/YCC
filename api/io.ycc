@@ -1,0 +1,11 @@
+public class io
+{
+    public void print(String s){}
+    public void printInt(int i){}
+    public void printDouble(double d){}
+    public void printChar(char c){}
+    public String input(){}
+    public char inputChar(){}
+    public int inputInt(){}
+    public double inputDouble(){}
+}

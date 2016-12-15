@@ -5,232 +5,182 @@
 using std::cout;
 using std::endl;
 
+
 namespace ycc
 {
-    IRGenerator::IRGenerator()
-        : labelCount_(1),oneVistor_(true),fuzhi_(false),constant_(false),incre_(false)
+    IRGenerator::IRGenerator(const std::string &filename)
+        : labelCount_(1),oneVistor_(true),fuzhi_(false),constant_(false),incre_(false),callRet_(false),call_value(false)
     {
+    	output_.open(filename, std::ios::out);
         symbolTable_ = SymbolTable::getInstance();
+        symbolTable_->dumpIR(output_);
     }
 
-	void IRGenerator::gene(VecNodePtr ast){
-		
-	}
-	
-	std::string IRGenerator::numeric(int typeIndex)
-    {
-        auto type = symbolTable_->getTypeInfo(typeIndex);
-
-        if(type == TypeInfo::BYTE)
-		{
-        	return "i32";
-		}
-		else if(type == TypeInfo::CHAR)
-		{
-			return "i8*";
-		}
-		else if(type == TypeInfo::INT)
-		{
-			return "i32";
-		}
-		else if(type == TypeInfo::SHORT)
-		{
-			return "i32";
-		}
-		else if(type == TypeInfo::LONG)
-		{
-			return "i32";
-		}
-		else if(type == TypeInfo::FLOAT)
-		{
-			return "double";
-		}
-		else if(type == TypeInfo::DOUBLE)
-		{
-			return "double";
-		}
-		
-		else if(type == TypeInfo::BOOLEAN)
-		{
-			return "i8";
-		}
-		else
-		{
-			return "error";
-		}
-    }
-    
-    std::string IRGenerator::change_Op(std::string op){
-    	if(op == "plus")
-		{
-			return "add nsw";
-		}
-		else if(op == "minus") 
-		{
-			return "sub nsw";
-		}
-		else if(op == "multiply")
-		{
-			return "mul nsw";
-		}
-		else if(op == "divide")
-		{
-			return "sdiv";
-		}
-		else if(op == "equal")    //==
-		{
-			return "icmp seq";
-		}
-		else if(op == "less than")     //<
-		{
-			return "icmp slt";
-		}
-		else if(op == "less or equal")   //<=
-		{
-			return "icmp sle";
-		}
-		else if(op == "greater than")   //>
-		{
-			return "icmp sgt";
-		}
-		else if(op == "greater or equal")    //>=
-		{
-			return "icmp sge";
-		}
-		else if(op == "not equal")   //!=
-		{
-			return "icmp sne";
-		}
-		else
-		{
-			return "error";	
-		}
-	}
-
-	// generator tools
-    void IRGenerator::writeMethod_begin(int type, std::string name)
-	{  
-    	cout<<"Function Attrs: nounwind uwtable"<<endl;
-		cout<<"define "+symbolTable_->getTypeName(type)+" @"+name+"() #0 {"<<endl;
-	}
-	void IRGenerator::writeMethod_end(int type)
-	{  
-		cout<<"\tret "+symbolTable_->getTypeName(type)<<endl;
-		cout<<"}"<<endl;
-	}
-	
-    void IRGenerator::writeAlloca(std::string Name,int Type)
+	void IRGenerator::gene(VecNodePtr ast)
 	{
-    	cout<<"\t%"<<Name<<" = alloca "<<numeric(Type)<<", align 4"<<endl;
-	}
-	
-    void IRGenerator::writeStore(int Type,std::string oneName,std::string twoName)
-	{
-    	cout<<"\tstore "<<numeric(Type)<<" %"<<oneName<<", "<<numeric(Type)<<"* %"+twoName+", align 4"<<endl;
-	}
-	
-	void IRGenerator::writeLoad(int labelCount,int Type,std::string Name)
-	{
-		cout<<"\t%"<<labelCount<<" = load "<<numeric(Type)<<", "<<numeric(Type)<<"* %"<<Name<<", align 4"<<endl;
-	}
-	
-    void IRGenerator::writeLabel(int count)
-	{
-		cout<<""<<endl;
-    	cout<<"; <label>:"<<count<<endl;
-	}
-	
-    void IRGenerator::writeJump(int Label)
-	{
-		cout<<"\tbr label %"<<Label<<endl;
-    	//TODO: writeJump
-	}
-    void IRGenerator::writeCJump(int C,int thenLabel,int elseLabel)
-	{
-    	cout<<"\tbr i1 %"<<C<<", label %"<<thenLabel<<", label %"<<elseLabel<<endl;
-	}
-    
-    void IRGenerator::visit(VecNodePtr ast)
-    {
         for(auto node : ast)
         {
             node->accept(this);
         }
-        cout << endl;
+        output_ << endl;
+		output_.close();
+	}
+
+	std::string IRGenerator::numeric(int typeIndex)
+    {
+    	return symbolTable_->getTypeIR(typeIndex);
     }
+
+
+
+	// generator tools
+    void IRGenerator::writeMethod_begin(std::string name,MethodInfo mInfo)
+	{
+
+        if(name != "main")
+        {
+            name = mInfo.getFullName();
+        }
+
+		output_<<endl;
+    	//output_<<"Function Attrs: nounwind uwtable"<<endl;
+		output_<<"define "<<numeric(mInfo.getType())<<" @"<<name<<"(";
+        if(name != "main")
+        {
+    		for(int i = 0;i<mInfo.parameters_.size();i++){
+    			output_<<" "<<numeric(mInfo.paramTypes_[i])<<" "<<"%"<<mInfo.parameters_[i];
+    			if(i<mInfo.parameters_.size()-1){
+    				output_<<",";
+    			}
+    		}
+        }
+	    output_<<") {"<<endl;
+	}
+	void IRGenerator::writeMethod_end(MethodInfo mInfo)
+	{
+		output_<<"\tret "<<numeric(mInfo.getType())<<endl;
+		output_<<"}"<<endl;
+	}
+
+    void IRGenerator::writeAlloca(std::string Name,int Type)
+	{
+    	output_<<"\t%"<<Name<<" = alloca "<<numeric(Type)<<", align 4"<<endl;
+	}
+
+    void IRGenerator::writeStore(int Type,std::string oneName,std::string twoName)
+	{
+    	output_<<"\tstore "<<numeric(Type)<<" %"<<oneName<<", "<<numeric(Type)<<"* %"+twoName+", align 4"<<endl;
+	}
+
+	void IRGenerator::writeLoad(int labelCount,int Type,std::string Name)
+	{
+		output_<<"\t%"<<labelCount<<" = load "<<numeric(Type)<<", "<<numeric(Type)<<"* %"<<Name<<", align 4"<<endl;
+	}
+
+    void IRGenerator::writeLabel(int count)
+	{
+		output_<<""<<endl;
+    	output_<<"; <label>:"<<count<<endl;
+	}
+
+    void IRGenerator::writeJump(int Label)
+	{
+		output_<<"\tbr label %"<<Label<<endl;
+    	//TODO: writeJump
+	}
+    void IRGenerator::writeCJump(int C,int thenLabel,int elseLabel)
+	{
+    	output_<<"\tbr i1 %"<<C<<", label %"<<thenLabel<<", label %"<<elseLabel<<endl;
+	}
+
+	void IRGenerator::writeCall(int labelCount,std::string name,MethodInfo mInfo)
+	{
+		if(labelCount == 0){
+			output_<<"\tcall "<<numeric(mInfo.getType())<<" @"<<name<<"(";
+
+		}
+		else
+		{
+			output_<<"\t%"<<labelCount<<" = call "<<numeric(mInfo.getType())<<" @"<<name<<"(";
+
+		}
+	}
+
 
     void IRGenerator::visit(ASTNode *node)
     {
-        cout << "you should not visit here in ASTNode" << endl;
+        output_ << "you should not visit here in ASTNode" << endl;
     }
 
     void IRGenerator::visit(Stmt *node)
     {
-        cout << "you should not visit here in Stmt" << endl;
+        output_ << "you should not visit here in Stmt" << endl;
     }
 
     void IRGenerator::visit(EmptyStmt *node)
     {
-        
+
     }
 
     void IRGenerator::visit(ClassStmt *node)
     {
-        
+
         symbolTable_->enterClass(node->name);
         node->body->accept(this);
         symbolTable_->leaveClass();
-        
+
     }
 
     void IRGenerator::visit(MethodDeclStmt *node)
     {
-        
+
         // TODO: parameter
       //  symbolTable_->enter(node->name);
-        
-        writeMethod_begin(symbolTable_->getTypeIndex("void"),node->name);   // TODO: ·½·¨µÄType 
+
+        auto mInfo = symbolTable_->getMethodInfo(node->name);
+
+        writeMethod_begin(node->name,mInfo);   // TODO: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Type
         labelCount_ = 1;
-        
-        cout<<"\t%1 = alloca i32, align 4"<<endl;
-        labelCount_++;
-        node->body->accept(this);    //ÏÈ±éÀúÒ»´Î·½·¨ÀïÃæµÄ±äÁ¿ 
-        //TODO:Êä³ö¶¨ÒåµÄ±äÁ¿ 
+
+        //output_<<"\t%1 = alloca i32, align 4"<<endl;
+        //labelCount_++;
+        node->body->accept(this);    //ï¿½È±ï¿½ï¿½ï¿½Ò»ï¿½Î·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½
+        //TODO:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½
         oneVistor_ = false;
-        
-        cout<<"\tstore i32 0, i32* %1, align 4"<<endl;
-        
-        node->body->accept(this);    //µÚ¶þ´Î±éÀú 
-        
+
+        //output_<<"\tstore i32 0, i32* %1, align 4"<<endl;
+
+        node->body->accept(this);    //ï¿½Ú¶ï¿½ï¿½Î±ï¿½ï¿½ï¿½
+
         oneVistor_ = true;
-        writeMethod_end(symbolTable_->getTypeIndex("void"));     // TODO: ·½·¨µÄType 
-        
+        writeMethod_end(mInfo);     // TODO: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Type
+
      //   symbolTable_->leave();
     }
 
-    void IRGenerator::visit(PrimaryStmt *node)    // ¶¨Òå±äÁ¿ 
+    void IRGenerator::visit(PrimaryStmt *node)    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     {
         auto typeIndex = symbolTable_->getTypeIndex(node->type);
-        	
+
 	    info = new SymbolInfo(typeIndex, node->flags);
 	    for(auto v : node->decls)
 	    {
 	        v->accept(this);
 	    }
-        
+
     }
 
     void IRGenerator::visit(BlockStmt *node)
     {
-        
+
     //    symbolTable_->enter();
-        for(auto stmt : node->statements)  
+        for(auto stmt : node->statements)
         {
             stmt->accept(this);
         }
-        
+
      //   symbolTable_->leave();
-        
+
     }
 
     void IRGenerator::visit(IfStmt *node)
@@ -256,7 +206,7 @@ namespace ycc
 	        	writeCJump(labelCount_-1,thenLabel,endLabel);  //CJump;
 	        	labelCount_ = labelCount_+2;
 			}
-	        
+
 	        writeLabel(thenLabel);
 	        node->thenBody->accept(this);
 	        writeJump(endLabel);
@@ -268,7 +218,7 @@ namespace ycc
 	        }
 	        writeLabel(endLabel);
 		}
-        
+
     }
 
     void IRGenerator::visit(ForStmt *node)
@@ -280,25 +230,25 @@ namespace ycc
 	        int updateLabel = labelCount_+2;
 	        int endLabel = labelCount_+3;
 	        labelCount_ = labelCount_ +4;
-	        
+
 	        node->init->accept(this);
 	        writeJump(conditionLabel);
-	        
+
 	        writeLabel(conditionLabel);
 	        node->condition->accept(this);
-	        
-	        writeCJump(labelCount_-1,bodyLabel,endLabel); 
-	        
+
+	        writeCJump(labelCount_-1,bodyLabel,endLabel);
+
 	        writeLabel(bodyLabel);
 	        node->body->accept(this);
-	        
+
 	        writeJump(updateLabel);
-	        
+
 	        writeLabel(updateLabel);
 	        node->update->accept(this);
 	        writeJump(conditionLabel);
 	        writeLabel(endLabel);
-    	}    
+    	}
     }
 
     void IRGenerator::visit(WhileStmt *node)
@@ -310,25 +260,25 @@ namespace ycc
 	    	int endLabel = labelCount_+2;
 	    	labelCount_= labelCount_+3;
 	    	writeJump(conditionLabel);
-	    	
+
 	    	writeLabel(conditionLabel);
 	        node->condition->accept(this);
 	        writeCJump(labelCount_-1,bodyLabel,endLabel);  //CJump;
-	        
+
 	        writeLabel(bodyLabel);
 	        node->body->accept(this);
-	        
+
 	        writeLabel(endLabel);
 		}
-    	
+
     }
 
     void IRGenerator::visit(DoStmt *node)
     {
-        
+
         node->body->accept(this);
         node->condition->accept(this);
-        
+
     }
 
     void IRGenerator::visit(SwitchStmt *node)
@@ -348,12 +298,12 @@ namespace ycc
 	        }
 		}
         */
-        
+
     }
 
     void IRGenerator::visit(CaseStmt *node)
     {
-        
+
         node->label->accept(this);
         for(auto v : node->statements)
         {
@@ -363,36 +313,36 @@ namespace ycc
 
     void IRGenerator::visit(ReturnStmt *node)
     {
-        
+
         if(node->returnValue)
         {
             node->returnValue->accept(this);
         }
-        
+
     }
 
     void IRGenerator::visit(BreakStmt *node)
     {
-        
-        
+
+
     }
 
     void IRGenerator::visit(ContinueStmt *node)
     {
-        
+
     }
 
     void IRGenerator::visit(Expr *node)
     {
-        cout << "you should not visit here in Expr" << endl;
+        output_ << "you should not visit here in Expr" << endl;
     }
 
-    void IRGenerator::visit(VariableDeclExpr *node)    
+    void IRGenerator::visit(VariableDeclExpr *node)
     {
         if(oneVistor_){
         	if(symbolTable_->hasVariable(node->name,false))
 			{
-	        	
+
 			}
 			else
 			{
@@ -404,11 +354,12 @@ namespace ycc
 		{
 			if(node->initValue)
 	        {
+	        	callRet_ = true;
 	        	constant_ = false ;
 	            node->initValue->accept(this);
 	            if(constant_)
 				{
-	            	cout<<"\tstore "<<numeric(info->getType())<<" "<<constant_value<<", "<<numeric(info->getType())<<"* %"+node->name+", align 4"<<endl;
+	            	output_<<"\tstore "<<numeric(info->getType())<<" "<<constant_value<<", "<<numeric(info->getType())<<"* %"+node->name+", align 4"<<endl;
 	            	constant_ = true;
 				}
 				else
@@ -416,7 +367,7 @@ namespace ycc
 					auto initCount = labelCount_-1;
 	            	writeStore(info->getType(),std::to_string(initCount),node->name);   //store
 				}
-	            
+				callRet_ = false;
 	        }
 		}
     }
@@ -426,7 +377,7 @@ namespace ycc
         if(symbolTable_->hasVariable(node->name))
 		{
         	auto node_type = symbolTable_->getVariableInfo(node->name);
-			node->setType(node_type.getType());  //ÉèÖÃÀàÐÍ 
+			node->setType(node_type.getType());  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		}
 		if(!oneVistor_){
 			if(fuzhi_)
@@ -437,10 +388,10 @@ namespace ycc
 			{
 				writeLoad(labelCount_,node->getType(),node->name);   //Load
 				labelCount_++;
-				cout<<"\t%"<<labelCount_<<" = add nsw "<<numeric(node->getType())<<" %"<<labelCount_-1<<", 1"<<endl;
+				output_<<"\t%"<<labelCount_<<" = add nsw "<<numeric(node->getType())<<" %"<<labelCount_-1<<", 1"<<endl;
 				labelCount_++;
 				writeStore(node->getType(),std::to_string(labelCount_-1),node->name);
-				
+
 			}
 			else
 			{
@@ -448,39 +399,59 @@ namespace ycc
 				labelCount_++;
 			}
 		}
-		
+
     }
 
     void IRGenerator::visit(NewExpr *node)
     {
-        
+
         node->constructor->accept(this);
-        
+
     }
 
     void IRGenerator::visit(IndexExpr *node)
     {
-        
+
         node->left->accept(this);
         node->index->accept(this);
-        
+
     }
 
     void IRGenerator::visit(CallExpr *node)
     {
-        
-        for(auto v : node->arguments)
-        {
-            v->accept(this);
-        }
-        
+    	if(!oneVistor_)
+		{
+			call_value = true;
+			auto mInfo = symbolTable_->getMethodInfo(node->callee);
+	    	if(callRet_)
+			{
+				writeCall(labelCount_,node->callee,mInfo);
+	        	labelCount_++;
+			}
+			else
+			{
+				writeCall(0,node->callee,mInfo);
+			}
+			call_index = 0;
+			call_name = node->callee;
+	        for(auto v : node->arguments)
+	        {
+	            v->accept(this);
+	            call_index++;
+	        }
+	       	output_<<") "<<endl;
+			constant_ = false;
+			call_value = false;
+		}
+
+
     }
 
     void IRGenerator::visit(QualifiedIdExpr *node)     //  .
     {
-        
+
         node->left->accept(this);
-        
+
         node->right->accept(this);
         auto rt = node->right->getType();
         node->setType(rt);
@@ -489,10 +460,18 @@ namespace ycc
     void IRGenerator::visit(IntExpr *node)
     {
         if(!oneVistor_){
-        	constant_ = true;
-        	constant_value = node->lexeme;
+        	if(call_value){
+        		auto mInfo = symbolTable_->getMethodInfo(call_name);
+
+        		output_<<numeric(mInfo.paramTypes_[call_index])<<" "<<node->lexeme;
+			}
+			else
+			{
+				constant_ = true;
+        		constant_value = node->lexeme;
+			}
 		}
-        
+
     }
 
     void IRGenerator::visit(RealExpr *node)
@@ -520,32 +499,32 @@ namespace ycc
 
     void IRGenerator::visit(NullExpr *node)
     {
-        
+
         //TODO:
     }
 
     void IRGenerator::visit(StrExpr *node)
     {
-        
-        
+
+
         node->setType(symbolTable_->getTypeIndex("String"));
-        
-        
+
+
     }
 
     void IRGenerator::visit(ArrayExpr *node)
     {
-        
+
         for(auto elem : node->elems)
         {
             elem->accept(this);
         }
-        
+
     }
 
     void IRGenerator::visit(UnaryOpExpr *node)
     {
-        
+
         auto et = node->expr->getType();
         incre_ = false;
         if(!oneVistor_)
@@ -563,86 +542,88 @@ namespace ycc
         if(!oneVistor_){
         	std::string op_name = tokenDesc(node->op);
 	      	if(isAssignmentOperator(node->op))
-			{         //¸³Öµ²Ù×÷·û 
+			{         //ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+
 				fuzhi_ = false;
 				constant_ = false;
+				callRet_ = true;
 	        	node->right->accept(this);
 	        	auto rCount = labelCount_-1;
-	        	auto rt = node->right->getType();      // ÓÒ×ÓÊ÷ÀàÐÍ 
+	        	auto rt = node->right->getType();      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	        	fuzhi_ = true;
 	        	node->left->accept(this);
-	        	auto lt = node->left->getType();       //×ó×ÓÊ÷ÀàÐÍ 
-	        	
+	        	auto lt = node->left->getType();       //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+
 	        	node->setType(lt);
-	        	if(constant_){
-	        		cout<<"\tstore "<<numeric(lt)<<" "<<constant_value<<", "<<numeric(lt)<<"* %"+fuzhi_name+", align 4"<<endl;
+	        	if(constant_){    //Ö±ï¿½Ó¸ï¿½Öµï¿½ï¿½ï¿½ï¿½
+	        		output_<<"\tstore "<<numeric(lt)<<" "<<constant_value<<", "<<numeric(lt)<<"* %"+fuzhi_name+", align 4"<<endl;
 				}
 				else{
 					writeStore(lt,std::to_string(rCount),fuzhi_name);          //store
 				}
-	        
+
+
 	        	fuzhi_ = false;
 	        	constant_ = false;
+	        	callRet_ = false;
 			}
 			else
 			{
 				constant_=false;
 				std::string lcon,rcon;
-				
+
 				node->left->accept(this);
-				
+
 				if(constant_){
 					lcon = constant_value;
 					constant_=false;
 				}
-				auto lCount = labelCount_-1; 
-	        	auto lt = node->left->getType();     //×ó×ÓÊ÷ÀàÐÍ 
-	        	
+				auto lCount = labelCount_-1;
+	        	auto lt = node->left->getType();     //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+
 	        	node->right->accept(this);
-	        	
+
 	        	if(constant_){
 					rcon = constant_value;
 					constant_=false;
 				}
 	        	auto rCount = labelCount_-1;
-	        	auto rt = node->right->getType();      // ÓÒ×ÓÊ÷ÀàÐÍ  
+	        	auto rt = node->right->getType();      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	        	node->setType(lt);
-	        	if(lcon.empty()&& rcon.empty()){    //ÔËËã2±ß¶¼²»ÊÇ³£Êý 
-	        		cout<<"\t%"<<labelCount_<<" = "<<change_Op(tokenDesc(node->op))<<" "<<numeric(lt)<<" %"<<lCount<<", %"<<rCount<<endl;
+	        	if(lcon.empty()&& rcon.empty()){    //ï¿½ï¿½ï¿½ï¿½2ï¿½ß¶ï¿½ï¿½ï¿½ï¿½Ç³ï¿½ï¿½ï¿½
+	        		output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" %"<<lCount<<", %"<<rCount<<endl;
 				}
-				else if(lcon.empty()&& !rcon.empty())      // ÓÒ±ßÊÇ³£Êý 
+				else if(lcon.empty()&& !rcon.empty())      // ï¿½Ò±ï¿½ï¿½Ç³ï¿½ï¿½ï¿½
 	        	{
-	        		cout<<"\t%"<<labelCount_<<" = "<<change_Op(tokenDesc(node->op))<<" "<<numeric(lt)<<" %"<<lCount<<", "<<rcon<<endl;
+	        		output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" %"<<lCount<<", "<<rcon<<endl;
 				}
-				else if(!lcon.empty()&& rcon.empty())          // ×ó±ßÊÇ³£Êý 
+				else if(!lcon.empty()&& rcon.empty())          // ï¿½ï¿½ï¿½ï¿½ï¿½Ç³ï¿½ï¿½ï¿½
 				{
-					cout<<"\t%"<<labelCount_<<" = "<<change_Op(tokenDesc(node->op))<<" "<<numeric(lt)<<" "<<lcon<<", %"<<rCount<<endl;
+					output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" "<<lcon<<", %"<<rCount<<endl;
 				}
-				else          //¶¼ÊÇ³£Êý 
+				else          //ï¿½ï¿½ï¿½Ç³ï¿½ï¿½ï¿½
 				{
-					cout<<"\t%"<<labelCount_<<" = "<<change_Op(tokenDesc(node->op))<<" "<<numeric(lt)<<" "<<lcon<<", "<<rcon<<endl;
+					output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" "<<lcon<<", "<<rcon<<endl;
 				}
 				labelCount_++;
 			}
-		} 
+		}
     }
 
     void IRGenerator::visit(TernaryOpExpr *node)
     {
-        
-        
+
+
         node->condition->accept(this);
-        
+
         node->thenValue->accept(this);
-        
+
         int thenType =node->thenValue->getType();
-        
+
         node->elseValue->accept(this);
-        
+
         int elseType = node->elseValue->getType();
-		
+
 		node->setType(thenType);
     }
 }
-
-

@@ -9,7 +9,34 @@ namespace ycc
         : scanner_(scanner)
     {
         symbolTable_ = SymbolTable::getInstance();
-        advance();          // get first token
+        preprocess();
+        //advance();          // get first token
+    }
+
+    void Parser::preprocess()
+    {
+        advance();
+        while(match(TokenTag::IMPORT, true))
+        {
+            if(match(TokenTag::IDENTIFIER))
+            {
+                auto apiName = token_.lexeme();
+                auto apiPath = "./api/" + apiName + ".ycc";
+                Scanner apiScanner(apiPath);
+                Parser apiParser(apiScanner);
+                apiParser.parse();
+                symbolTable_->addModuleName(apiName);
+            }
+            else
+            {
+                errorReport("unexpected module name " + token_.lexeme());
+            }
+            advance();
+            if(!match(TokenTag::SEMICOLON, true))
+            {
+                errorReport("expected ';' here");
+            }
+        }
     }
 
     // inner operations
@@ -192,7 +219,7 @@ namespace ycc
             type += "[]";
             if(!symbolTable_->hasType(type))
             {
-                symbolTable_->addType(type, wd);
+                symbolTable_->addType(type, wd, typeIndex);
             }
         }
 
@@ -334,7 +361,7 @@ namespace ycc
                 parameterType += "[]";
                 if(!symbolTable_->hasType(parameterType))
                 {
-                    symbolTable_->addType(parameterType, wd);
+                    symbolTable_->addType(parameterType, wd, typeIndex);
                 }
             }
 
@@ -365,7 +392,7 @@ namespace ycc
                     parameterType += "[]";
                     if(!symbolTable_->hasType(parameterType))
                     {
-                        symbolTable_->addType(parameterType, wd);
+                        symbolTable_->addType(parameterType, wd, typeIndex);
                     }
                 }
 
@@ -639,7 +666,7 @@ namespace ycc
                 type += "[]";
                 if(!symbolTable_->hasType(type))
                 {
-                    symbolTable_->addType(type, wd);
+                    symbolTable_->addType(type, wd, typeIndex);
                 }
             }
 

@@ -19,6 +19,7 @@ namespace ycc
         static bool     getErrorFlag();
 
     private:
+        void            preprocess();
         void            advance();
         bool            match(TokenTag tag, bool advanceToNextToken = false);
         bool            match(TokenTag tag, const std::string &msg, bool advanceToNextToken = false);

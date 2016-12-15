@@ -1,3 +1,4 @@
+import io;
 public class OpTest
 {
     public static void main(String [] args)
@@ -10,11 +11,11 @@ public class OpTest
         int [] arr = { 1, 2, 3, 4 }, arr2 = arr[0], arr3 = {};
         if(a == b && a == c || b == c && c == d)
         {
-            print("这尼玛什么鬼");
+            print("这尼玛什么鬼\n\f");
         }
         else
         {
-            print("hello world");
+            print("hello world\n\\");
         }
     }
 }

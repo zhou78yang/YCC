@@ -50,6 +50,11 @@ namespace ycc
         buffer_.push_back(c);
     }
 
+    void Scanner::addToBuffer(std::string s)
+    {
+        buffer_ += s;
+    }
+
     void Scanner::reduceBuffer()
     {
         buffer_.pop_back();
@@ -446,11 +451,30 @@ namespace ycc
 
         switch(currentChar_)
         {
-        case 'b':case 't':case 'n':case 'f':case 'r':
-            case '"':case '\'': case '\\':
-            addToBuffer(currentChar_);
+        case 'b':
+            addToBuffer("08");
             break;
-
+        case 't':
+            addToBuffer("09");
+            break;
+        case 'n':
+            addToBuffer("0A");
+            break;
+        case 'f':
+            addToBuffer("0C");
+            break;
+        case 'r':
+            addToBuffer("0D");
+            break;
+        case '"':
+            addToBuffer("22");
+            break;
+        case '\'':
+            addToBuffer("27");
+            break;
+        case '\\':
+            addToBuffer("5C");
+            break;
         case '0':case '1':case '2':case '3':
             // hundred's digit
             addToBuffer(currentChar_);

@@ -34,6 +34,7 @@ namespace ycc
         void            getNextChar();
         char            peekChar();
         void            addToBuffer(char c);
+        void            addToBuffer(std::string s);
         void            reduceBuffer();
         void            makeToken(std::string name, TokenTag tag);
         void            updateLocation();

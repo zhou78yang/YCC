@@ -1,8 +1,8 @@
-#include "./lexer/token.h"
 #include "./lexer/scanner.h"
 #include "./parser/parser.h"
 #include "./compiler/depth_vistor.h"
 #include "./compiler/compiler_vistor.h"
+#include "./compiler/IRGenerator.h"
 #include "./main.hpp"
 
 using namespace ycc;
@@ -28,6 +28,9 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+
+
+    // for ldy test
     if(srcFileName.size() < 1)
     {
         cout << ">>";
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    cout << "--ycc compiler--" << endl;
+    cout << "\n  --  ycc compiler  --  \n" << endl;
     cout << "parse file " << srcFileName << " begin..." << endl;
     Scanner scanner(srcFileName);
     Parser parser(scanner);
@@ -66,13 +69,23 @@ int main(int argc, char *argv[])
         DepthVistor *vistor = new DepthVistor();
         vistor->visit(ast);
         cout << "print ast end..." << endl;
-        return 0;
     }
 
     cout << "semantic analyzed begin..." << endl;
     auto compilerVistor = new CompilerVistor();
-    compilerVistor->visit(ast);
+    if(compilerVistor->check(ast))
+    {
+        ExceptionHandler::getInstance()->report();
+        cout << "exit.." << endl;
+        exit(1);
+    }
+
     cout << "semantic analyzed end..." << endl;
+    cout << "generate IR begin..." << endl;
+    auto IRgenerator = new IRGenerator("ycc.ll");
+    IRgenerator->gene(ast);
+    cout << "generate IR end..." << endl;
+
 
     if(checkOption(OpTag::DUMP_SYMBOL_TABLE))
     {
