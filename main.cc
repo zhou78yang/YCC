@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
         DepthVistor *vistor = new DepthVistor();
         vistor->visit(ast);
         cout << "print ast end..." << endl;
+        return 0;
     }
 
     cout << "semantic analyzed begin..." << endl;

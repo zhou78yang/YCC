@@ -3,7 +3,7 @@
     */          // /*  block useless      
         // line comment test
       //         */
-
+// 
 public class TokenTest
 {
     public static void main(String [] args)
@@ -18,7 +18,7 @@ public class TokenTest
         boolean b1 = true;
 
         b1 = false;
-        i1 += i2;
+        //i1 += i2;
         i3 *= i4 + 5 / (10 * i5);
         String s = fun(i1, i2);
 

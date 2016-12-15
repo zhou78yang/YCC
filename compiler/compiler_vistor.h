@@ -15,7 +15,7 @@ namespace ycc
         CompilerVistor();
         ~CompilerVistor() = default;
 
-        void visit(VecNodePtr ast);
+		void visit(VecNodePtr ast);
         void visit(ASTNode *node);
         void visit(Stmt *node);
         void visit(EmptyStmt *node);
@@ -50,7 +50,7 @@ namespace ycc
         void visit(BinaryOpExpr *node);
         void visit(TernaryOpExpr *node);
 
-        bool check(VecNodePtr ast);
+        bool check();
 
     private:
 
@@ -66,11 +66,10 @@ namespace ycc
         SymbolInfo      *info;
         bool            errorFlag_;
     private:
-        bool             variableFlag_;
+    	bool 			variableFlag_;
     };
 
 }
 
 #endif
-
 

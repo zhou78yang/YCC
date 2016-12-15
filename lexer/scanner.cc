@@ -82,7 +82,7 @@ namespace ycc
 
     void Scanner::handleLineComment()
     {
-        if(currentChar_ == '/' && peekChar() == '/')
+        while(currentChar_ == '/' && peekChar() == '/')
         {
             while(!input_.eof())
             {
@@ -99,7 +99,7 @@ namespace ycc
 
     void Scanner::handleBlockComment()
     {
-        if(currentChar_ == '/' && peekChar() == '*')
+        while(currentChar_ == '/' && peekChar() == '*')
         {
             bool block_end = false;
 

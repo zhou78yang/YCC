@@ -14,8 +14,9 @@ namespace ycc
         symbolTable_ = SymbolTable::getInstance();
     }
 
-    bool CompilerVistor::check(VecNodePtr ast)
+    bool CompilerVistor::check()
     {
+        // TODO: ¶ÔÍâ½Ó¿Ú£¬±éÀúÒ»±éÓï·¨Ê÷½øÐÐÓïÒå¼ì²é£¬·µ»ØÓïÒå·ÖÎö½á¹û£¿
         return errorFlag_;
     }
 
@@ -42,9 +43,10 @@ namespace ycc
     void CompilerVistor::errorReport(const std::string &msg, const TokenLocation &loc, ErrorType errorType)
     {
         ExceptionHandler::getInstance()->add(msg, loc, errorType);
+        errorFlag_ = true;
     }
-
-
+    
+    
     void CompilerVistor::visit(VecNodePtr ast)
     {
         for(auto node : ast)
@@ -66,72 +68,72 @@ namespace ycc
 
     void CompilerVistor::visit(EmptyStmt *node)
     {
-
+        
     }
 
     void CompilerVistor::visit(ClassStmt *node)
     {
-
+        
         symbolTable_->enterClass(node->name);
         node->body->accept(this);
         symbolTable_->leaveClass();
-
+        
     }
 
     void CompilerVistor::visit(MethodDeclStmt *node)
     {
-
+        
         // TODO: parameter
         symbolTable_->enter(node->name);
         node->body->accept(this);
         symbolTable_->leave();
-
+        
     }
 
-    void CompilerVistor::visit(PrimaryStmt *node)    // å®šä¹‰å˜é‡
+    void CompilerVistor::visit(PrimaryStmt *node)    // ¶¨Òå±äÁ¿ 
     {
-
+        
         auto typeIndex = symbolTable_->getTypeIndex(node->type);
         info = new SymbolInfo(typeIndex, node->flags);
         for(auto v : node->decls)
         {
             v->accept(this);
         }
-
+        
     }
 
     void CompilerVistor::visit(BlockStmt *node)
     {
-
+        
         symbolTable_->enter();
         for(auto stmt : node->statements)
         {
             stmt->accept(this);
         }
         symbolTable_->leave();
-
+        
     }
 
     void CompilerVistor::visit(IfStmt *node)
     {
-
+        
         node->condition->accept(this);
         node->thenBody->accept(this);
         if(node->elseBody)
         {
             node->elseBody->accept(this);
         }
-
+        
     }
 
     void CompilerVistor::visit(ForStmt *node)
     {
-
+        
         node->init->accept(this);
         node->condition->accept(this);
         node->update->accept(this);
         node->body->accept(this);
-
+        
     }
 
     void CompilerVistor::visit(WhileStmt *node)
@@ -142,15 +144,15 @@ namespace ycc
 
     void CompilerVistor::visit(DoStmt *node)
     {
-
+        
         node->body->accept(this);
         node->condition->accept(this);
-
+        
     }
 
     void CompilerVistor::visit(SwitchStmt *node)
     {
-
+        
         node->flag->accept(this);
         for(auto c : node->cases)
         {
@@ -163,12 +165,12 @@ namespace ycc
                 v->accept(this);
             }
         }
-
+        
     }
 
     void CompilerVistor::visit(CaseStmt *node)
     {
-
+        
         node->label->accept(this);
         for(auto v : node->statements)
         {
@@ -178,23 +180,23 @@ namespace ycc
 
     void CompilerVistor::visit(ReturnStmt *node)
     {
-
+        
         if(node->returnValue)
         {
             node->returnValue->accept(this);
         }
-
+        
     }
 
     void CompilerVistor::visit(BreakStmt *node)
     {
-
-
+        
+        
     }
 
     void CompilerVistor::visit(ContinueStmt *node)
     {
-
+        
     }
 
     void CompilerVistor::visit(Expr *node)
@@ -202,85 +204,85 @@ namespace ycc
         cout << "you should not visit here in Expr" << endl;
     }
 
-    void CompilerVistor::visit(VariableDeclExpr *node)   
+    void CompilerVistor::visit(VariableDeclExpr *node)    
     {
-
+        
         if(symbolTable_->hasVariable(node->name,false))
-        {
-            std::string error_msg = "Duplicate local variable "+node->name;   //å˜é‡å·²ç»å®šä¹‰
-            errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
-        }
-        else
-        {
-            symbolTable_->add(node->name, *info);
-        }
-
+		{
+        	std::string error_msg = "Duplicate local variable "+node->name;   //±äÁ¿ÒÑ¾­¶¨Òå 
+			errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+		}
+		else
+		{
+			symbolTable_->add(node->name, *info);
+		}
+    	
         if(node->initValue)
         {
             node->initValue->accept(this);
         }
         else
-        {
-            //TODO
-        //    symbolTable_->getVariableInfo(node->name).setAttribute(SymbolTag::UNDEFINE);
-        }
-
+		{
+        	//TODO
+        //	symbolTable_->getVariableInfo(node->name).setAttribute(SymbolTag::UNDEFINE);
+		}
+        
     }
 
     void CompilerVistor::visit(IdentifierExpr *node)
     {
-
+        
         if(symbolTable_->hasVariable(node->name))
-        {
-            auto node_type = symbolTable_->getVariableInfo(node->name);
-            variableFlag_ = true;
-        //    if(symbolTable_->getVariableInfo(node->name).check(SymbolTag::UNDEFINE))
-        //{
-        //        node->setType(symbolTable_->getTypeIndex("VOID"));
-        //    }
-        //    else
-        //{
-                node->setType(node_type.getType());  //è®¾ç½®ç±»åž‹
-        //    }
-        }
-        else
-        {
-            std::string error_msg = node->name+" cannot be resolved to a variable";   //å˜é‡æ²¡æœ‰å®šä¹‰
-            errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
-        }
-
+		{
+        	auto node_type = symbolTable_->getVariableInfo(node->name);
+        	variableFlag_ = true;
+        //	if(symbolTable_->getVariableInfo(node->name).check(SymbolTag::UNDEFINE))
+		//{
+        //		node->setType(symbolTable_->getTypeIndex("VOID"));
+		//	}
+		//	else
+		//{
+				node->setType(node_type.getType());  //ÉèÖÃÀàÐÍ 
+		//	}
+		}
+		else
+		{
+			std::string error_msg = node->name+" cannot be resolved to a variable";   //±äÁ¿Ã»ÓÐ¶¨Òå 
+			errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+		}
+        
     }
 
     void CompilerVistor::visit(NewExpr *node)
     {
-
+        
         node->constructor->accept(this);
-
+        
     }
 
     void CompilerVistor::visit(IndexExpr *node)
     {
-
+        
         node->left->accept(this);
         node->index->accept(this);
-
+        
     }
 
     void CompilerVistor::visit(CallExpr *node)
     {
-
+        
         for(auto v : node->arguments)
         {
             v->accept(this);
         }
-
+        
     }
 
     void CompilerVistor::visit(QualifiedIdExpr *node)     //  .
     {
-
+        
         node->left->accept(this);
-
+        
         node->right->accept(this);
         auto rt = node->right->getType();
         node->setType(rt);
@@ -288,142 +290,141 @@ namespace ycc
 
     void CompilerVistor::visit(IntExpr *node)
     {
-
+        
         node->setType(symbolTable_->getTypeIndex("int"));
-
+        
     }
 
     void CompilerVistor::visit(RealExpr *node)
     {
-
+        
         node->setType(symbolTable_->getTypeIndex("double"));
-
+        
     }
 
     void CompilerVistor::visit(BoolExpr *node)
     {
-
+        
         node->setType(symbolTable_->getTypeIndex("boolean"));
-
-
+        
+        
     }
 
     void CompilerVistor::visit(NullExpr *node)
     {
-
+        
         //TODO:
-
-
+        
+        
     }
 
     void CompilerVistor::visit(StrExpr *node)
     {
-
-
+        
+        
         node->setType(symbolTable_->getTypeIndex("String"));
-
-
+        
+        
     }
 
     void CompilerVistor::visit(ArrayExpr *node)
     {
-
+        
         for(auto elem : node->elems)
         {
             elem->accept(this);
         }
-
+        
     }
 
     void CompilerVistor::visit(UnaryOpExpr *node)
     {
-
+        
         //TODO:
-
+        
         node->expr->accept(this);
-
+        
         auto et = node->expr->getType();
         if(!numeric(et))
-        {
-            std::string error_msg = "Type mismatch: cannot convert from "+symbolTable_->getTypeName(et)+" to int"; 
-            errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
-        }
-
+		{
+        	std::string error_msg = "Type mismatch: cannot convert from "+symbolTable_->getTypeName(et)+" to int";  
+			errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+		}
+        
     }
 
     void CompilerVistor::visit(BinaryOpExpr *node)
     {
-
+        
         std::string op_name = tokenDesc(node->op);
-          if(isAssignmentOperator(node->op))
-          {         //èµ‹å€¼æ“ä½œç¬¦
-            node->right->accept(this);
-            auto rt = node->right->getType();      // å³å­æ ‘ç±»åž‹
-
-            variableFlag_ = false;
-            node->left->accept(this);
-            auto lt = node->left->getType();       //å·¦å­æ ‘ç±»åž‹
-            if(!variableFlag_)
-            {
-                std::string error_msg = "The left-hand side of an assignment must be a variable";
-                errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
-            }
-            else
-            {
-                if(maxType(lt,rt) == lt)
-                {
-                    node->setType(maxType(lt,rt));
-                }
-                else
-                {
-                    std::string error_msg = "Type mismatch: cannot convert from "+symbolTable_->getTypeName(rt)+" to "+symbolTable_->getTypeName(lt); 
-                    errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
-                }
-            }
-        }
-        else
-        {
-            node->left->accept(this);
-            //TODO:
-            auto lt = node->left->getType();     //å·¦å­æ ‘ç±»åž‹
-            node->right->accept(this);
-            auto rt = node->right->getType();      // å³å­æ ‘ç±»åž‹
-            if(numeric(lt)&&numeric(rt))
-            {
-                node->setType(maxType(lt,rt));
-            }
-            else
-            {
-                std::string error_msg = "Type "+symbolTable_->getTypeName(lt)+" and "+symbolTable_->getTypeName(rt)+" cannot be arithmetic";
-                errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
-            }
-        }
+      	if(isAssignmentOperator(node->op))
+		  {         //¸³Öµ²Ù×÷·û 
+        	node->right->accept(this);
+        	auto rt = node->right->getType();      // ÓÒ×ÓÊ÷ÀàÐÍ 
+        	
+        	variableFlag_ = false;
+        	node->left->accept(this);
+        	auto lt = node->left->getType();       //×ó×ÓÊ÷ÀàÐÍ 
+        	if(!variableFlag_)
+			{
+        		std::string error_msg = "The left-hand side of an assignment must be a variable"; 
+        		errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+			}
+			else
+			{
+				if(maxType(lt,rt) == lt)
+				{
+		        	node->setType(maxType(lt,rt));
+				}
+				else
+				{
+					std::string error_msg = "Type mismatch: cannot convert from "+symbolTable_->getTypeName(rt)+" to "+symbolTable_->getTypeName(lt);  
+					errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+				}
+			}
+		}
+		else
+		{
+			node->left->accept(this);
+			//TODO:
+        	auto lt = node->left->getType();     //×ó×ÓÊ÷ÀàÐÍ 
+        	node->right->accept(this);
+        	auto rt = node->right->getType();      // ÓÒ×ÓÊ÷ÀàÐÍ 
+        	if(numeric(lt)&&numeric(rt))
+        	{
+        		node->setType(maxType(lt,rt));
+			}
+			else
+			{
+				std::string error_msg = "Type "+symbolTable_->getTypeName(lt)+" and "+symbolTable_->getTypeName(rt)+" cannot be arithmetic";
+				errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+			}
+		}
     }
 
     void CompilerVistor::visit(TernaryOpExpr *node)
     {
-
+        
         node->condition->accept(this);
         node->thenValue->accept(this);
-
+        
         int thenType =node->thenValue->getType();
-
+        
         node->elseValue->accept(this);
-
+        
         int elseType = node->elseValue->getType();
-
-        if(maxType(thenType,elseType)!=thenType&&maxType(thenType,elseType)!=elseType)
-        {
-            std::string error_msg = "Type mismatch: cannot convert from "+symbolTable_->getTypeName(thenType)+" to "+symbolTable_->getTypeName(elseType); 
-            errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
-        }
-        else
-        {
-            node->setType(thenType);
-        }
+		
+		if(maxType(thenType,elseType)!=thenType&&maxType(thenType,elseType)!=elseType)
+		{
+			std::string error_msg = "Type mismatch: cannot convert from "+symbolTable_->getTypeName(thenType)+" to "+symbolTable_->getTypeName(elseType);  
+			errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+		}
+		else
+		{
+			node->setType(thenType);
+		}
     }
 
 }
-
 
 

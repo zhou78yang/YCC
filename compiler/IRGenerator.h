@@ -1,5 +1,5 @@
 #ifndef IRGENERATOR_H_
-#deifne IRGENERATOR_H_
+#define IRGENERATOR_H_
 
 #include "../parser/vistor.h"
 #include "../parser/ast.hpp"
@@ -13,9 +13,9 @@ namespace ycc
         ~IRGenerator() = default;
 
         void gene(VecNodePtr ast);
+        void visit(VecNodePtr ast);
 
     private:
-		void visit(VecNodePtr ast);
         void visit(ASTNode *node);
         void visit(Stmt *node);
         void visit(EmptyStmt *node);
@@ -51,17 +51,28 @@ namespace ycc
         void visit(TernaryOpExpr *node);
 
         // generator tools
-        void writeMethod();
-        void writeAlloca();
-        void writeStore();
-        void writeLabel();
-        void writeJump();
-        void writeCJump();
-        ...
+        void writeMethod_begin(int type, std::string name);
+        void writeMethod_end(int type);
+        void writeAlloca(std::string Name,int Type);
+        void writeStore(int Type,std::string oneName,std::string twoName);        // twoName->oneName
+        void writeLoad(int labelCount,int Type,std::string Name);                //Name->labelCount
+        void writeLabel(int count);
+        void writeJump(int Label);
+        void writeCJump(int C,int thenLabel,int elseLabel);
+        void writeBinaryOp();
 
     private:
+    	SymbolInfo      	*info;
         SymbolTable *       symbolTable_;
         int                 labelCount_;
+        bool				oneVistor_; 
+        bool 				fuzhi_;
+        std::string			fuzhi_name;
+        std::string	    	numeric(int typeIndex);
+        bool 				constant_;
+        std::string			constant_value;
+        bool				incre_;
+        std::string        	change_Op(std::string op);
     };
 }
 

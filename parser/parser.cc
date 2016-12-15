@@ -567,7 +567,8 @@ namespace ycc
     {
         auto node = new CaseStmt(getLocation());
         advance();                                      // case
-        node->label = parseExpr();                      // Expr
+        // TODO: label may support int constants
+        node->label = parseInt(token_.tag() == TokenTag::CHAR_LITERAL);  // Expr
         match(TokenTag::COLON, token_.lexeme(), true);  // :
 
         while(true)
