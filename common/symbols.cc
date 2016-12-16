@@ -109,6 +109,36 @@ namespace ycc
         return false;
     }
 
+    bool isLogicOperator(TokenTag tag)
+    {
+        switch(tag)
+        {
+        case TokenTag::LOGIC_OR:                   // ||
+        case TokenTag::LOGIC_AND:                  // &&
+            return true;
+        default:
+            break;
+        }
+        return false;
+    }
+
+    bool isCompareOperator(TokenTag tag)
+    {
+        switch(tag)
+        {
+        case TokenTag::EQUAL:                      // ==
+        case TokenTag::NOT_EQUAL:                  // !=
+        case TokenTag::GREATER_THAN:               // >
+        case TokenTag::LESS_THAN:                  // <
+        case TokenTag::LESS_OR_EQUAL:              // <=
+        case TokenTag::GREATER_OR_EQUAL:           // >=
+            return true;
+        default:
+            break;
+        }
+        return false;
+    }
+
     bool isInfixOp(TokenTag tag)
     {
         switch(tag)
@@ -132,7 +162,7 @@ namespace ycc
             case TokenTag::MULTIPLY:                   // *
             case TokenTag::DIVIDE:                     // /
             case TokenTag::MOD:                        // %
-            case TokenTag::COLON:                      // : (!)
+            //case TokenTag::COLON:                      // : (!)
                 return true;
             default:
                 break;
@@ -236,7 +266,43 @@ namespace ycc
 
     std::string change_Op(TokenTag tag)
     {
-        return "op";
+        std::string ret;
+        switch(tag){
+            case TokenTag::EQUAL:                      // ==
+                ret = "icmp seq";
+                break;
+            case TokenTag::NOT_EQUAL:                  // !=
+                ret = "icmp sne";
+                break;
+            case TokenTag::GREATER_THAN:               // >
+                ret = "icmp sgt";
+                break;
+            case TokenTag::LESS_THAN:                  // <
+                ret = "icmp slt";
+                break;
+            case TokenTag::LESS_OR_EQUAL:              // <=
+                ret = "icmp sle";
+                break;
+            case TokenTag::GREATER_OR_EQUAL:           // >=
+                ret = "icmp sge";
+                break;
+            case TokenTag::PLUS:                       // +
+                ret = "add nsw";
+                break;
+            case TokenTag::MINUS:                      // -
+                ret = "sub nsw";
+                break;
+            case TokenTag::MULTIPLY:                   // *
+                ret = "mul nsw";
+                break;
+            case TokenTag::DIVIDE:                     // /
+                ret = "sdiv";
+                break;
+            default:
+                ret = "error";
+                break;
+        }
+        return ret;
     }
 
     std::string tokenDesc(TokenTag tag)

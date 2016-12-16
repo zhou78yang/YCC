@@ -62,19 +62,42 @@ namespace ycc
 		output_<<"}"<<endl;
 	}
 
-    void IRGenerator::writeAlloca(std::string Name,int Type)
+    void IRGenerator::writeAlloca(std::string name,int type)
 	{
-    	output_<<"\t%"<<Name<<" = alloca "<<numeric(Type)<<", align 4"<<endl;
+        int wd = symbolTable_->getTypeInfo(type).getWidth();
+    	output_<<"\t%"<<name<<" = alloca "<<numeric(type)<<", align " << wd <<endl;
 	}
 
-    void IRGenerator::writeStore(int Type,std::string oneName,std::string twoName)
+    void IRGenerator::writeStore(int type,std::string oneName,std::string twoName)
 	{
-    	output_<<"\tstore "<<numeric(Type)<<" %"<<oneName<<", "<<numeric(Type)<<"* %"+twoName+", align 4"<<endl;
+        auto info = symbolTable_->getVariableInfo(twoName);
+        int wd = symbolTable_->getTypeInfo(type).getWidth();
+
+    	output_<<"\tstore "<<numeric(type)<<" %"<<oneName<<", "<<numeric(type)<<"* ";
+        if(info.check(SymbolTag::STATIC))
+        {
+            output_ << "@" << info.getFullName() << ", align " << wd << endl;
+        }
+        else
+        {
+            output_ << "%" << twoName << ", align " << wd << endl;
+        }
 	}
 
-	void IRGenerator::writeLoad(int labelCount,int Type,std::string Name)
+	void IRGenerator::writeLoad(int labelCount,int type,std::string name)
 	{
-		output_<<"\t%"<<labelCount<<" = load "<<numeric(Type)<<", "<<numeric(Type)<<"* %"<<Name<<", align 4"<<endl;
+        auto info = symbolTable_->getVariableInfo(name);
+        int wd = symbolTable_->getTypeInfo(info.getType()).getWidth();
+		output_<<"\t%"<<labelCount<<" = load "<< numeric(type) <<", "
+               <<numeric(type)<<"* ";
+        if(info.check(SymbolTag::STATIC))
+        {
+            output_ << "@" << info.getFullName() << ", align " << wd << endl;
+        }
+        else
+        {
+            output_ << "%" << name << ", align " << wd << endl;
+        }
 	}
 
     void IRGenerator::writeLabel(int count)
@@ -225,11 +248,14 @@ namespace ycc
     {
     	if(!oneVistor_)
 		{
-	    	int conditionLabel =labelCount_;
-	    	int bodyLabel = labelCount_+1;
-	        int updateLabel = labelCount_+2;
-	        int endLabel = labelCount_+3;
-	        labelCount_ = labelCount_ +4;
+	    	int conditionLabel =labelCount_++;
+	    	int bodyLabel = labelCount_++;
+	        int updateLabel = labelCount_++;
+	        int endLabel = labelCount_++;
+
+            continueStack_.push_back(updateLabel);
+            breakStack_.push_back(endLabel);
+            //cout << "push break label: " << breakStack_.back() << endl;
 
 	        node->init->accept(this);
 	        writeJump(conditionLabel);
@@ -248,6 +274,8 @@ namespace ycc
 	        node->update->accept(this);
 	        writeJump(conditionLabel);
 	        writeLabel(endLabel);
+
+            breakStack_.pop_back();
     	}
     }
 
@@ -376,8 +404,8 @@ namespace ycc
     {
         if(symbolTable_->hasVariable(node->name))
 		{
-        	auto node_type = symbolTable_->getVariableInfo(node->name);
-			node->setType(node_type.getType());  //��������
+        	auto nodeInfo = symbolTable_->getVariableInfo(node->name);
+			node->setType(nodeInfo.getType());  //��������
 		}
 		if(!oneVistor_){
 			if(fuzhi_)
@@ -451,7 +479,6 @@ namespace ycc
     {
 
         node->left->accept(this);
-
         node->right->accept(this);
         auto rt = node->right->getType();
         node->setType(rt);
@@ -505,11 +532,8 @@ namespace ycc
 
     void IRGenerator::visit(StrExpr *node)
     {
-
-
+        // TODO: string literal
         node->setType(symbolTable_->getTypeIndex("String"));
-
-
     }
 
     void IRGenerator::visit(ArrayExpr *node)

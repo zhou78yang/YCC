@@ -7,6 +7,8 @@ namespace ycc
 {
     extern int  getSymbolPrecedence(TokenTag tag);
     extern bool isAssignmentOperator(TokenTag tag);
+    extern bool isCompareOperator(TokenTag tag);
+    extern bool isLogicOperator(TokenTag tag);
     extern bool isInfixOp(TokenTag tag);
     extern bool isPrefixOp(TokenTag tag);
     extern bool isPostfixOp(TokenTag tag);

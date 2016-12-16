@@ -67,7 +67,7 @@ namespace ycc
     	SymbolInfo      	*info;
         SymbolTable *       symbolTable_;
         int                 labelCount_;
-        bool				oneVistor_; 
+        bool				oneVistor_;
         bool 				fuzhi_;
         std::string			fuzhi_name;
         std::string	    	numeric(int typeIndex);
@@ -78,6 +78,9 @@ namespace ycc
         bool				call_value;
         int 				call_index;
         std::string 		call_name;
+
+        std::vector<int>    breakStack_;
+        std::vector<int>    continueStack_;
     };
 }
 
