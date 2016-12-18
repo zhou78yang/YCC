@@ -54,13 +54,17 @@ namespace ycc
         void writeMethod_begin(std::string name,MethodInfo mInfo);
         void writeMethod_end(MethodInfo mInfo);
         void writeAlloca(std::string Name,int Type);
-        void writeStore(int Type,std::string oneName,std::string twoName);        // twoName->oneName
+        void writeStore(int type,std::string oneName,std::string twoName);        // twoName->oneName
+        void writeStore_value(int type,std::string oneName_value,std::string twoName);
+        
+        
         void writeLoad(int labelCount,int Type,std::string Name);                //Name->labelCount
         void writeLabel(int count);
         void writeJump(int Label);
         void writeCJump(int C,int thenLabel,int elseLabel);
         void writeCall(int labelCount,std::string name,MethodInfo mInfo);
-        void writeBinaryOp();
+        void writeBinaryOp(int labelCount,std::string op,int type,std::string lCount,std::string rCount,int model);
+        
 
     private:
     	std::ofstream 		output_;
@@ -68,6 +72,7 @@ namespace ycc
         SymbolTable *       symbolTable_;
         int                 labelCount_;
         bool				oneVistor_;
+        int					primaryType;
         bool 				fuzhi_;
         std::string			fuzhi_name;
         std::string	    	numeric(int typeIndex);
@@ -78,6 +83,9 @@ namespace ycc
         bool				call_value;
         int 				call_index;
         std::string 		call_name;
+        
+        bool				ret_;
+        std::string			ret_value;
 
         std::vector<int>    breakStack_;
         std::vector<int>    continueStack_;

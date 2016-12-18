@@ -269,10 +269,10 @@ namespace ycc
         std::string ret;
         switch(tag){
             case TokenTag::EQUAL:                      // ==
-                ret = "icmp seq";
+                ret = "icmp eq";
                 break;
             case TokenTag::NOT_EQUAL:                  // !=
-                ret = "icmp sne";
+                ret = "icmp ne";
                 break;
             case TokenTag::GREATER_THAN:               // >
                 ret = "icmp sgt";

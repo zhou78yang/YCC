@@ -379,6 +379,42 @@ namespace ycc
 				}
 			}
 		}
+		else if(isCompareOperator(node->op))    //CompareOp ¼Æ½ÏÔËËã·û 
+		{
+			node->left->accept(this);
+			//TODO:
+        	auto lt = node->left->getType();     //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        	node->right->accept(this);
+        	auto rt = node->right->getType();      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        	if(numeric(lt)&&numeric(rt))
+        	{
+        		node->setType(symbolTable_->getTypeIndex("boolean"));   //Type -> bool
+			}
+			else
+			{
+				std::string error_msg = "Incompatible operand types "+symbolTable_->getTypeName(lt)+" and "+symbolTable_->getTypeName(rt);
+				errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+			}
+		} 
+		else if(isLogicOperator(node->op))    //LogicOp   Âß¼­ÔËËã 
+		{
+			node->left->accept(this);
+			//TODO:
+        	auto lt = node->left->getType();     //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        	node->right->accept(this);
+        	auto rt = node->right->getType();      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        	auto type = symbolTable_->getTypeInfo(lt);
+        	
+        	if((lt == rt)&&(type == TypeInfo::BOOLEAN))
+        	{
+        		node->setType(symbolTable_->getTypeIndex("boolean"));   //Type -> bool
+			}
+			else
+			{
+				std::string error_msg = "The operator "+tokenDesc(node->op)+" is undefined for the argument type(s) "+symbolTable_->getTypeName(lt)+", "+symbolTable_->getTypeName(rt);
+				errorReport(error_msg,node->getLocation(),ErrorType::ERROR);
+			}
+		}
 		else
 		{
             // TODO: logic or arithmetic

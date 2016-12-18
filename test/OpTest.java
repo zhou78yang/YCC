@@ -9,8 +9,10 @@ public class OpTest
         d = a * (b + c) / d;
         static int count;
         //int [] arr = { 1, 2, 3, 4 }, arr2 = arr[0], arr3 = {};
-        if(a == b && a == c || b == c && c == d)
+        //if(a == b && a == c || b == c && c == d)
+        if(a == b)
         {
+            a = b + 10;
             //print("这尼玛什么鬼\n\f");
         }
         else

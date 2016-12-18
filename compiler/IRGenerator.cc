@@ -43,7 +43,6 @@ namespace ycc
         }
 
 		output_<<endl;
-    	//output_<<"Function Attrs: nounwind uwtable"<<endl;
 		output_<<"define "<<numeric(mInfo.getType())<<" @"<<name<<"(";
         if(name != "main")
         {
@@ -56,6 +55,7 @@ namespace ycc
         }
 	    output_<<") {"<<endl;
 	}
+
 	void IRGenerator::writeMethod_end(MethodInfo mInfo)
 	{
 		output_<<"\tret "<<numeric(mInfo.getType())<<endl;
@@ -74,6 +74,22 @@ namespace ycc
         int wd = symbolTable_->getTypeInfo(type).getWidth();
 
     	output_<<"\tstore "<<numeric(type)<<" %"<<oneName<<", "<<numeric(type)<<"* ";
+        if(info.check(SymbolTag::STATIC))
+        {
+            output_ << "@" << info.getFullName() << ", align " << wd << endl;
+        }
+        else
+        {
+            output_ << "%" << twoName << ", align " << wd << endl;
+        }
+	}
+
+	void IRGenerator::writeStore_value(int type,std::string oneName_value,std::string twoName)
+	{
+		auto info = symbolTable_->getVariableInfo(twoName);
+        int wd = symbolTable_->getTypeInfo(type).getWidth();
+
+    	output_<<"\tstore "<<numeric(type)<<" "<<oneName_value<<", "<<numeric(type)<<"* ";
         if(info.check(SymbolTag::STATIC))
         {
             output_ << "@" << info.getFullName() << ", align " << wd << endl;
@@ -129,6 +145,31 @@ namespace ycc
 		}
 	}
 
+	void IRGenerator::writeBinaryOp(int labelCount,std::string op,int type,std::string lCount,std::string rCount,int model)
+	{
+		switch(model)
+		{
+			case 1:
+				output_<<"\t%"<<labelCount<<" = "<<op<<" "<<numeric(type)<<" %"<<lCount<<", %"<<rCount<<endl;
+				break;
+
+			case 2:
+				output_<<"\t%"<<labelCount<<" = "<<op<<" "<<numeric(type)<<" %"<<lCount<<", "<<rCount<<endl;
+				break;
+
+			case 3:
+				output_<<"\t%"<<labelCount<<" = "<<op<<" "<<numeric(type)<<" "<<lCount<<", %"<<rCount<<endl;
+				break;
+
+			case 4:
+				output_<<"\t%"<<labelCount<<" = "<<op<<" "<<numeric(type)<<" "<<lCount<<", "<<rCount<<endl;
+				break;
+
+			default:
+				break;
+		}
+	}
+
 
     void IRGenerator::visit(ASTNode *node)
     {
@@ -158,57 +199,96 @@ namespace ycc
     {
 
         // TODO: parameter
-      //  symbolTable_->enter(node->name);
+        symbolTable_->enter(node->name);
 
         auto mInfo = symbolTable_->getMethodInfo(node->name);
 
-        writeMethod_begin(node->name,mInfo);   // TODO: ������Type
+        writeMethod_begin(node->name,mInfo);
         labelCount_ = 1;
 
-        //output_<<"\t%1 = alloca i32, align 4"<<endl;
-        //labelCount_++;
-        node->body->accept(this);    //�ȱ���һ�η��������ı���
-        //TODO:���������ı���
+		oneVistor_ = true;
+
+        node->body->accept(this);     //oneVistor
+
         oneVistor_ = false;
 
-        //output_<<"\tstore i32 0, i32* %1, align 4"<<endl;
 
-        node->body->accept(this);    //�ڶ��α���
+        node->body->accept(this);              //twoVistor
 
         oneVistor_ = true;
-        writeMethod_end(mInfo);     // TODO: ������Type
-
-     //   symbolTable_->leave();
+        if(symbolTable_->getTypeName(mInfo.getType())=="void")
+		{
+        	writeMethod_end(mInfo);
+		}
+		else
+		{
+			output_<<"}"<<endl;
+		}
+        symbolTable_->leave();
     }
 
-    void IRGenerator::visit(PrimaryStmt *node)    // ��������
+    void IRGenerator::visit(PrimaryStmt *node)       //Primary
     {
-        auto typeIndex = symbolTable_->getTypeIndex(node->type);
+    	auto typeIndex = symbolTable_->getTypeIndex(node->type);
+		info = new SymbolInfo(typeIndex, node->flags);
+    	if(oneVistor_)
+    	{
+		    if(info->check(SymbolTag::STATIC))         //  if primary static variable
+		    {
 
-	    info = new SymbolInfo(typeIndex, node->flags);
-	    for(auto v : node->decls)
-	    {
-	        v->accept(this);
-	    }
-
+			}
+			else
+			{
+				for(auto v : node->decls)
+		    	{
+		    		v->setType(symbolTable_->getTypeIndex(node->type));
+		        	v->accept(this);
+		    	}
+			}
+		}
+		else
+		{
+		    for(auto v : node->decls)
+		    {
+		        v->accept(this);
+		    }
+		}
     }
 
     void IRGenerator::visit(BlockStmt *node)
     {
+		if(oneVistor_)
+		{
+			for(auto stmt : node->statements)
+        	{
+            	stmt->accept(this);
+        	}
+		}
+		else
+		{
+			symbolTable_->enter();
+	        for(auto stmt : node->statements)
+	        {
+	            stmt->accept(this);
+	        }
 
-    //    symbolTable_->enter();
-        for(auto stmt : node->statements)
-        {
-            stmt->accept(this);
-        }
-
-     //   symbolTable_->leave();
+	        symbolTable_->leave();
+		}
 
     }
 
     void IRGenerator::visit(IfStmt *node)
     {
-        if(!oneVistor_)
+    	if(oneVistor_)
+    	{
+    		node->condition->accept(this);
+	        node->thenBody->accept(this);
+	        if(node->elseBody)
+	        {
+	            node->elseBody->accept(this);
+	        }
+		}
+        else
 		{
         	node->condition->accept(this);
 	        int  thenLabel ;
@@ -246,8 +326,17 @@ namespace ycc
 
     void IRGenerator::visit(ForStmt *node)
     {
-    	if(!oneVistor_)
+    	if(oneVistor_)
+    	{
+    		node->init->accept(this);
+        	node->condition->accept(this);
+        	node->update->accept(this);
+        	node->body->accept(this);
+		}
+    	else
 		{
+
+
 	    	int conditionLabel =labelCount_++;
 	    	int bodyLabel = labelCount_++;
 	        int updateLabel = labelCount_++;
@@ -275,18 +364,27 @@ namespace ycc
 	        writeJump(conditionLabel);
 	        writeLabel(endLabel);
 
+			continueStack_.pop_back();
             breakStack_.pop_back();
     	}
     }
 
     void IRGenerator::visit(WhileStmt *node)
     {
-    	if(!oneVistor_)
+    	if(oneVistor_)
     	{
-    		int conditionLabel = labelCount_;
-	    	int bodyLabel = labelCount_+1;
-	    	int endLabel = labelCount_+2;
-	    	labelCount_= labelCount_+3;
+    		node->condition->accept(this);
+        	node->body->accept(this);
+		}
+    	else
+    	{
+    		int conditionLabel = labelCount_++;
+	    	int bodyLabel = labelCount_++;
+	    	int endLabel = labelCount_++;
+
+	    	continueStack_.push_back(conditionLabel);
+	    	breakStack_.push_back(endLabel);
+
 	    	writeJump(conditionLabel);
 
 	    	writeLabel(conditionLabel);
@@ -295,23 +393,52 @@ namespace ycc
 
 	        writeLabel(bodyLabel);
 	        node->body->accept(this);
+	        writeJump(conditionLabel);
 
 	        writeLabel(endLabel);
+
+	        continueStack_.pop_back();
+	        breakStack_.pop_back();
 		}
 
     }
 
     void IRGenerator::visit(DoStmt *node)
     {
+    	if(oneVistor_){
+    		node->body->accept(this);
+        	node->condition->accept(this);
+		}
+    	else
+    	{
+	    	int bodyLabel = labelCount_++;
+	    	int conditionLabel = labelCount_++;
+	    	int endLabel = labelCount_++;
 
-        node->body->accept(this);
-        node->condition->accept(this);
+	    	continueStack_.push_back(conditionLabel);
+	    	breakStack_.push_back(endLabel);
+
+	    	writeJump(bodyLabel);
+
+	    	writeLabel(bodyLabel);
+	    	node->body->accept(this);
+	    	writeJump(conditionLabel);
+
+	    	writeLabel(conditionLabel);
+	        node->condition->accept(this);
+	        writeCJump(labelCount_-1,bodyLabel,endLabel);  //CJump;
+
+	        writeLabel(endLabel);
+
+	        continueStack_.pop_back();
+	        breakStack_.pop_back();
+		}
 
     }
 
     void IRGenerator::visit(SwitchStmt *node)
     {
-       /* if(!oneVistor_){
+       	if(oneVistor_){
         	node->flag->accept(this);
 	        for(auto c : node->cases)
 	        {
@@ -325,39 +452,61 @@ namespace ycc
 	            }
 	        }
 		}
-        */
 
     }
 
     void IRGenerator::visit(CaseStmt *node)
     {
+		if(oneVistor_)
+		{
 
-        node->label->accept(this);
-        for(auto v : node->statements)
-        {
-            v->accept(this);
-        }
+	        node->label->accept(this);
+	        for(auto v : node->statements)
+	        {
+	            v->accept(this);
+	        }
+		}
     }
 
     void IRGenerator::visit(ReturnStmt *node)
     {
-
-        if(node->returnValue)
-        {
-            node->returnValue->accept(this);
-        }
+    	if(oneVistor_){
+    		if(node->returnValue)
+        	{
+            	node->returnValue->accept(this);
+        	}
+		}
+		else{
+			ret_ = false;
+	        if(node->returnValue)
+	        {
+	            node->returnValue->accept(this);
+	        }
+	        if(ret_)
+			{
+	        	output_<<"\tret "<<numeric(node->returnValue->getType())<<" "<<ret_value<<endl;
+			}
+			else
+			{
+				output_<<"\tret "<<numeric(node->returnValue->getType())<<" "<<labelCount_-1<<"%"<<endl;
+			}
+			ret_ = false;
+		}
 
     }
 
     void IRGenerator::visit(BreakStmt *node)
     {
-
-
-    }
+    	if(!oneVistor_){
+			writeJump(breakStack_.back());
+    	}
+	}
 
     void IRGenerator::visit(ContinueStmt *node)
     {
-
+    	if(!oneVistor_){
+    		writeJump(continueStack_.back());
+		}
     }
 
     void IRGenerator::visit(Expr *node)
@@ -368,7 +517,12 @@ namespace ycc
     void IRGenerator::visit(VariableDeclExpr *node)
     {
         if(oneVistor_){
-        	if(symbolTable_->hasVariable(node->name,false))
+	    //	writeAlloca(node->name,info->getType());   //alloca
+	    	writeAlloca(node->name,node->getType());
+		}
+		else
+		{
+			if(symbolTable_->hasVariable(node->name,false))
 			{
 
 			}
@@ -376,10 +530,7 @@ namespace ycc
 			{
 				symbolTable_->add(node->name, *info);
 			}
-	    	writeAlloca(node->name,info->getType());   //alloca
-		}
-		else
-		{
+
 			if(node->initValue)
 	        {
 	        	callRet_ = true;
@@ -387,8 +538,8 @@ namespace ycc
 	            node->initValue->accept(this);
 	            if(constant_)
 				{
-	            	output_<<"\tstore "<<numeric(info->getType())<<" "<<constant_value<<", "<<numeric(info->getType())<<"* %"+node->name+", align 4"<<endl;
-	            	constant_ = true;
+	            	writeStore_value(info->getType(),constant_value,node->name);
+					constant_ = true;
 				}
 				else
 				{
@@ -402,12 +553,14 @@ namespace ycc
 
     void IRGenerator::visit(IdentifierExpr *node)
     {
-        if(symbolTable_->hasVariable(node->name))
+		if(!oneVistor_)
 		{
-        	auto nodeInfo = symbolTable_->getVariableInfo(node->name);
-			node->setType(nodeInfo.getType());  //��������
-		}
-		if(!oneVistor_){
+			if(symbolTable_->hasVariable(node->name))
+			{
+        		auto nodeInfo = symbolTable_->getVariableInfo(node->name);
+				node->setType(nodeInfo.getType());  //��������
+			}
+
 			if(fuzhi_)
 			{
 				fuzhi_name = node->name;
@@ -425,6 +578,11 @@ namespace ycc
 			{
 				writeLoad(labelCount_,node->getType(),node->name);    //load
 				labelCount_++;
+
+				auto nodeInfo = symbolTable_->getVariableInfo(node->name);
+				node->setType(nodeInfo.getType());  //��������
+
+
 			}
 		}
 
@@ -432,17 +590,21 @@ namespace ycc
 
     void IRGenerator::visit(NewExpr *node)
     {
+		if(oneVistor_)
+		{
 
-        node->constructor->accept(this);
-
+        	node->constructor->accept(this);
+		}
     }
 
     void IRGenerator::visit(IndexExpr *node)
     {
+		if(oneVistor_)
+		{
 
-        node->left->accept(this);
-        node->index->accept(this);
-
+        	node->left->accept(this);
+        	node->index->accept(this);
+		}
     }
 
     void IRGenerator::visit(CallExpr *node)
@@ -471,21 +633,41 @@ namespace ycc
 			constant_ = false;
 			call_value = false;
 		}
-
-
     }
 
     void IRGenerator::visit(QualifiedIdExpr *node)     //  .
     {
-
-        node->left->accept(this);
-        node->right->accept(this);
-        auto rt = node->right->getType();
-        node->setType(rt);
+		if(oneVistor_)
+		{
+       		node->left->accept(this);
+        	node->right->accept(this);
+        	auto rt = node->right->getType();
+        	node->setType(rt);
+    	}
     }
 
     void IRGenerator::visit(IntExpr *node)
     {
+        node->setType(symbolTable_->getTypeIndex("int"));
+        if(!oneVistor_){
+
+        	if(call_value){
+        		auto mInfo = symbolTable_->getMethodInfo(call_name);
+
+        		output_<<numeric(mInfo.paramTypes_[call_index])<<" "<<node->lexeme;
+			}
+			else if(!ret_){
+				ret_ = true;
+				ret_value = node->lexeme;
+			}
+			constant_ = true;
+    		constant_value = node->lexeme;
+		}
+    }
+
+    void IRGenerator::visit(RealExpr *node)
+    {
+    	node->setType(symbolTable_->getTypeIndex("double"));
         if(!oneVistor_){
         	if(call_value){
         		auto mInfo = symbolTable_->getMethodInfo(call_name);
@@ -498,12 +680,6 @@ namespace ycc
         		constant_value = node->lexeme;
 			}
 		}
-
-    }
-
-    void IRGenerator::visit(RealExpr *node)
-    {
-        node->setType(symbolTable_->getTypeIndex("double"));
     }
 
     void IRGenerator::visit(BoolExpr *node)
@@ -580,7 +756,7 @@ namespace ycc
 
 	        	node->setType(lt);
 	        	if(constant_){    //ֱ�Ӹ�ֵ����
-	        		output_<<"\tstore "<<numeric(lt)<<" "<<constant_value<<", "<<numeric(lt)<<"* %"+fuzhi_name+", align 4"<<endl;
+	        		writeStore_value(lt,constant_value,fuzhi_name);       //store_value
 				}
 				else{
 					writeStore(lt,std::to_string(rCount),fuzhi_name);          //store
@@ -603,7 +779,7 @@ namespace ycc
 					constant_=false;
 				}
 				auto lCount = labelCount_-1;
-	        	auto lt = node->left->getType();     //����������
+	        	auto lt = node->left->getType();
 
 	        	node->right->accept(this);
 
@@ -612,22 +788,24 @@ namespace ycc
 					constant_=false;
 				}
 	        	auto rCount = labelCount_-1;
-	        	auto rt = node->right->getType();      // ����������
+	        	auto rt = node->right->getType();
 	        	node->setType(lt);
-	        	if(lcon.empty()&& rcon.empty()){    //����2�߶����ǳ���
-	        		output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" %"<<lCount<<", %"<<rCount<<endl;
+
+	        	if(lcon.empty()&& rcon.empty())
+                {
+	        		writeBinaryOp(labelCount_,change_Op(node->op),lt,std::to_string(lCount),std::to_string(rCount),1);
 				}
-				else if(lcon.empty()&& !rcon.empty())      // �ұ��ǳ���
+				else if(lcon.empty()&& !rcon.empty())
 	        	{
-	        		output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" %"<<lCount<<", "<<rcon<<endl;
+	        		writeBinaryOp(labelCount_,change_Op(node->op),lt,std::to_string(lCount),rcon,2);
 				}
-				else if(!lcon.empty()&& rcon.empty())          // �����ǳ���
+				else if(!lcon.empty()&& rcon.empty())
 				{
-					output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" "<<lcon<<", %"<<rCount<<endl;
+					writeBinaryOp(labelCount_,change_Op(node->op),lt,lcon,std::to_string(rCount),3);
 				}
-				else          //���ǳ���
+				else
 				{
-					output_<<"\t%"<<labelCount_<<" = "<<change_Op(node->op)<<" "<<numeric(lt)<<" "<<lcon<<", "<<rcon<<endl;
+					writeBinaryOp(labelCount_,change_Op(node->op),lt,lcon,rcon,4);
 				}
 				labelCount_++;
 			}
